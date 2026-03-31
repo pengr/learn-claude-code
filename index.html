@@ -549,8 +549,8 @@
     <a class="sidebar-item" data-page="13-security" onclick="loadPage('13-security')"><span class="num">13</span> <span class="i18n" data-zh="安全机制" data-en="Security">安全机制</span></a>
     <a class="sidebar-item" data-page="14-misc-features" onclick="loadPage('14-misc-features')"><span class="num">14</span> <span class="i18n" data-zh="杂项特性" data-en="Misc Features">杂项特性</span></a>
 
-    <div class="sidebar-label"><span class="i18n" data-zh="原始文档" data-en="Original Docs">原始文档</span></div>
-    <a class="sidebar-item" data-page="README" onclick="loadPage('README')">📄 README</a>
+    <div class="sidebar-label"><span class="i18n" data-zh="文档索引" data-en="Doc Index">文档索引</span></div>
+    <a class="sidebar-item" data-page="INDEX" onclick="loadPage('INDEX')">📋 <span class="i18n" data-zh="完整索引" data-en="Full Index">完整索引</span></a>
   </nav>
 
   <main class="main" id="main-content">
@@ -574,7 +574,7 @@ const I18N = {
     docNote: '所有技术文档（docs/）均为中文撰写，完整分析了 Claude Code 的英文源码。导航界面支持中英双语切换。',
     allChapters: '全部章节',
     learningPaths: '学习路径',
-    pathA: { title: '快速了解', sub: '约 30 分钟', steps: ['系统总览 — 建立整体概念','README — 核心数据流'] },
+    pathA: { title: '快速了解', sub: '约 30 分钟', steps: ['系统总览 — 建立整体概念','INDEX — 文档导航索引'] },
     pathB: { title: '技术深度', sub: '2–3 小时', steps: ['系统总览','Agent Loop — 理解核心循环','工具系统 — 理解工具机制','上下文压缩 — 最复杂的优化','API 层 — Prompt Cache'] },
     pathC: { title: '构建类似系统', sub: '全部文档', steps: ['按顺序阅读全部 15 份文档','每份约 20–40 分钟','涵盖约 95% 核心系统'] },
     cards: [
@@ -606,7 +606,7 @@ const I18N = {
     docNote: 'All technical documents (docs/) are written in Chinese, with complete analysis of the English Claude Code source code. The navigation UI supports both Chinese and English.',
     allChapters: 'All Chapters',
     learningPaths: 'Learning Paths',
-    pathA: { title: 'Quick Overview', sub: '~30 minutes', steps: ['System Overview — Build a mental model','README — Core data flow'] },
+    pathA: { title: 'Quick Overview', sub: '~30 minutes', steps: ['System Overview — Build a mental model','INDEX — Doc navigation index'] },
     pathB: { title: 'Technical Deep Dive', sub: '2–3 hours', steps: ['System Overview','Agent Loop — Core loop mechanics','Tool System — How tools work','Context Compaction — Most complex optimization','API Layer — Prompt Cache'] },
     pathC: { title: 'Build a Similar System', sub: 'All docs', steps: ['Read all 15 documents in order','~20–40 min each','Covers ~95% of core systems'] },
     cards: [
@@ -644,10 +644,12 @@ marked.setOptions({ breaks: true, gfm: true });
 const renderer = new marked.Renderer();
 renderer.code = function(code, lang) {
   let hl = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  if (lang && hljs.getLanguage(lang)) {
-    try { hl = hljs.highlight(code, { language: lang }).value; } catch(e) {}
-  } else {
-    try { hl = hljs.highlightAuto(code).value; } catch(e) {}
+  if (typeof hljs !== 'undefined') {
+    if (lang && hljs.getLanguage(lang)) {
+      try { hl = hljs.highlight(code, { language: lang }).value; } catch(e) {}
+    } else {
+      try { hl = hljs.highlightAuto(code).value; } catch(e) {}
+    }
   }
   const lbl = currentLang === 'zh' ? '复制' : 'Copy';
   return `<div class="code-wrapper"><pre><code class="hljs">${hl}</code></pre><button class="copy-btn" onclick="copyCode(this)">${lbl}</button></div>`;
@@ -687,7 +689,8 @@ function toggleLang() {
   currentLang = currentLang === 'zh' ? 'en' : 'zh';
   applyLang();
   const h = location.hash.slice(1) || 'home';
-  if (h === 'home') renderHome();
+  // Reload current page content in new language
+  loadPage(h);
 }
 
 function toggleTheme() {
@@ -752,7 +755,7 @@ function renderHome() {
   const pa = d.pathA, pb = d.pathB, pc = d.pathC;
   const pathASteps = [
     { page:'00-overview', label: pa.steps[0] },
-    { page:'README',      label: pa.steps[1] },
+    { page:'INDEX',       label: pa.steps[1] },
   ];
   const pathBSteps = [
     { page:'00-overview',   label: pb.steps[0] },
@@ -820,11 +823,19 @@ async function loadPage(page) {
   m.innerHTML = `<div class="loading"><div class="spinner"></div>${t('loading')}</div>`;
 
   try {
-    const r = await fetch('docs/' + page + '.md');
+    // Try lang-specific version first, fall back to Chinese (default)
+    const prefix = currentLang === 'en' ? 'docs/en/' : 'docs/';
+    let r = await fetch(prefix + page + '.md');
+    if (!r.ok && currentLang === 'en') {
+      // fallback to Chinese if English not yet available
+      r = await fetch('docs/' + page + '.md');
+    }
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const md = await r.text();
     m.innerHTML = '<div class="md-body">' + marked.parse(md) + '</div>';
-    m.querySelectorAll('pre code:not(.hljs)').forEach(e => hljs.highlightElement(e));
+    if (typeof hljs !== 'undefined') {
+      m.querySelectorAll('pre code:not(.hljs)').forEach(e => hljs.highlightElement(e));
+    }
     window.scrollTo(0, 0);
   } catch(e) {
     m.innerHTML = `<div class="loading" style="color:var(--red)">❌ ${t('loadFail')}: ${e.message}</div>`;
