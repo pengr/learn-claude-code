@@ -557,19 +557,37 @@
 </div>
 
 <footer style="
-  text-align:center;
-  padding:28px 20px;
   font-size:13px;
   color:var(--text2);
   border-top:1px solid var(--border);
   background:var(--bg2);
 ">
-  <span>Made with ❤️ by <strong style="color:var(--text)">Ru Peng (a.k.a Perry)</strong></span>
-  &nbsp;·&nbsp;
-  <span class="i18n" data-zh="最后更新" data-en="Last updated">最后更新</span>
-  <span id="footer-date"></span>
-  &nbsp;·&nbsp;
-  <a href="https://github.com/pengr/learn-claude-code" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">GitHub</a>
+  <div style="
+    max-width:860px;
+    margin:0 auto;
+    padding:20px 32px 14px;
+    background:rgba(210,153,34,.06);
+    border-bottom:1px solid rgba(210,153,34,.2);
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+  ">
+    <span style="font-size:15px;flex-shrink:0;margin-top:1px;">⚠️</span>
+    <div style="line-height:1.7;">
+      <span class="i18n"
+        data-zh="免责声明：Claude Code 并非开源项目，其所有知识产权（包括源代码、设计、商标）均归 Anthropic 所有。本站所有文档均为作者基于公开信息进行的独立源代码分析，仅供学习与研究目的，不代表 Anthropic 官方立场，亦不构成任何商业用途。"
+        data-en="Disclaimer: Claude Code is not an open-source project. All intellectual property rights (including source code, design, and trademarks) are owned by Anthropic. All documents on this site are independent source code analyses by the author based on publicly available information, for educational and research purposes only. They do not represent the official position of Anthropic and are not intended for any commercial use."
+      >免责声明：Claude Code 并非开源项目，其所有知识产权（包括源代码、设计、商标）均归 Anthropic 所有。本站所有文档均为作者基于公开信息进行的独立源代码分析，仅供学习与研究目的，不代表 Anthropic 官方立场，亦不构成任何商业用途。</span>
+    </div>
+  </div>
+  <div style="text-align:center;padding:16px 20px;">
+    <span>Made with ❤️ by <strong style="color:var(--text)">Ru Peng (a.k.a Perry)</strong></span>
+    &nbsp;·&nbsp;
+    <span class="i18n" data-zh="最后更新" data-en="Last updated">最后更新</span>
+    <span id="footer-date"></span>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/pengr/learn-claude-code" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">GitHub</a>
+  </div>
 </footer>
 
 <button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">↑</button>
