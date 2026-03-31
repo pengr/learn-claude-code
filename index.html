@@ -3,44 +3,55 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Learn Claude Code — Deep technical analysis of Claude Code internals based on source code. 基于 Claude Code 源码的完整技术解析文档集。" />
-  <title>Learn Claude Code — 源码深度解析 / Deep Source Analysis</title>
+  <meta name="description" content="Learn Claude Code — Deep technical analysis of Claude Code internals. 基于 Claude Code 源码的完整技术解析文档集。" />
+  <title>Learn Claude Code — 源码深度解析</title>
   <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" id="hljs-theme" />
   <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/highlight.min.js"></script>
   <style>
-    /* ── Variables ── */
     :root {
-      --bg: #0d1117;
-      --bg2: #161b22;
-      --bg3: #1c2128;
-      --border: #30363d;
-      --text: #e6edf3;
-      --text2: #8b949e;
-      --accent: #58a6ff;
-      --accent2: #388bfd;
-      --green: #3fb950;
-      --orange: #d29922;
-      --red: #f85149;
-      --purple: #bc8cff;
-      --sidebar-w: 272px;
-      --header-h: 56px;
+      --bg:        #0d1117;
+      --bg2:       #161b22;
+      --bg3:       #1c2128;
+      --bg4:       #21262d;
+      --border:    #30363d;
+      --border2:   #21262d;
+      --text:      #e6edf3;
+      --text2:     #8b949e;
+      --text3:     #6e7681;
+      --accent:    #58a6ff;
+      --accent2:   #1f6feb;
+      --green:     #3fb950;
+      --orange:    #d29922;
+      --red:       #f85149;
+      --purple:    #bc8cff;
+      --pink:      #ff7b72;
+      --sidebar-w: 268px;
+      --header-h:  56px;
+      --banner-h:  0px;
       --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
       --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+      --radius:    8px;
+      --shadow:    0 8px 24px rgba(0,0,0,.4);
     }
     [data-theme="light"] {
-      --bg: #ffffff;
-      --bg2: #f6f8fa;
-      --bg3: #eaeef2;
+      --bg:     #ffffff;
+      --bg2:    #f6f8fa;
+      --bg3:    #eaeef2;
+      --bg4:    #e1e7ed;
       --border: #d0d7de;
-      --text: #1f2328;
-      --text2: #636c76;
+      --border2:#e8ecf0;
+      --text:   #1f2328;
+      --text2:  #636c76;
+      --text3:  #8c959f;
       --accent: #0969da;
-      --accent2: #0550ae;
-      --green: #1a7f37;
-      --red: #cf222e;
+      --accent2:#0550ae;
+      --green:  #1a7f37;
+      --red:    #cf222e;
       --purple: #8250df;
+      --shadow: 0 8px 24px rgba(0,0,0,.08);
     }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
@@ -51,67 +62,125 @@
       overflow-x: hidden;
     }
 
-    /* ── Header ── */
-    header {
+    /* ── Disclaimer banner ── */
+    #disclaimer-banner {
       position: fixed;
       top: 0; left: 0; right: 0;
-      height: var(--header-h);
-      background: var(--bg2);
-      border-bottom: 1px solid var(--border);
+      z-index: 200;
+      background: linear-gradient(90deg, rgba(210,153,34,.18), rgba(210,153,34,.12));
+      border-bottom: 1px solid rgba(210,153,34,.35);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 0 20px;
-      z-index: 100;
+      padding: 0 16px 0 20px;
+      min-height: 40px;
+      font-size: 12.5px;
+      color: #e3b341;
+      transition: transform .25s ease, opacity .25s ease;
     }
+    #disclaimer-banner.hidden { transform: translateY(-100%); opacity: 0; pointer-events: none; }
+    #disclaimer-banner .disc-icon { font-size: 14px; flex-shrink: 0; }
+    #disclaimer-banner .disc-text { flex: 1; line-height: 1.5; }
+    #disclaimer-banner .disc-close {
+      flex-shrink: 0;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      border: 1px solid rgba(210,153,34,.4);
+      background: transparent;
+      color: #e3b341;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    #disclaimer-banner .disc-close:hover { background: rgba(210,153,34,.2); }
+
+    /* ── Header ── */
+    header {
+      position: fixed;
+      top: var(--banner-h);
+      left: 0; right: 0;
+      height: var(--header-h);
+      background: rgba(22, 27, 34, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 16px 0 18px;
+      z-index: 100;
+      transition: top .25s ease;
+    }
+    [data-theme="light"] header { background: rgba(255,255,255,.88); }
+
     .header-logo {
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
       color: var(--text);
       text-decoration: none;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 9px;
       white-space: nowrap;
     }
     .logo-icon {
-      width: 28px; height: 28px;
-      background: linear-gradient(135deg, var(--accent), var(--purple));
-      border-radius: 6px;
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--purple) 100%);
+      border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 14px;
+      font-size: 15px;
+      box-shadow: 0 2px 8px rgba(88,166,255,.3);
+      flex-shrink: 0;
     }
     .header-spacer { flex: 1; }
     .header-btn {
-      padding: 5px 13px;
+      padding: 5px 12px;
       border-radius: 6px;
-      font-size: 13px;
+      font-size: 12.5px;
       border: 1px solid var(--border);
       background: transparent;
       color: var(--text2);
       cursor: pointer;
-      display: flex; align-items: center; gap: 6px;
+      display: flex; align-items: center; gap: 5px;
       text-decoration: none;
       transition: all .15s;
       white-space: nowrap;
     }
     .header-btn:hover { background: var(--bg3); color: var(--text); border-color: var(--accent); }
     .lang-btn {
-      padding: 4px 10px;
+      padding: 4px 11px;
       border-radius: 6px;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       border: 1px solid var(--border);
       background: var(--bg3);
-      color: var(--text);
+      color: var(--text2);
       cursor: pointer;
-      letter-spacing: .04em;
+      letter-spacing: .05em;
       transition: all .15s;
     }
-    .lang-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .lang-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(88,166,255,.08); }
+    .sidebar-toggle {
+      display: none;
+      padding: 5px 9px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      cursor: pointer;
+      font-size: 16px;
+      line-height: 1;
+    }
 
     /* ── Layout ── */
-    .layout { display: flex; padding-top: var(--header-h); min-height: 100vh; }
+    .layout {
+      display: flex;
+      padding-top: calc(var(--banner-h) + var(--header-h));
+      min-height: 100vh;
+    }
 
     /* ── Sidebar ── */
     .sidebar {
@@ -119,31 +188,33 @@
       min-width: var(--sidebar-w);
       background: var(--bg2);
       border-right: 1px solid var(--border);
-      height: calc(100vh - var(--header-h));
+      height: calc(100vh - var(--banner-h) - var(--header-h));
       position: sticky;
-      top: var(--header-h);
+      top: calc(var(--banner-h) + var(--header-h));
       overflow-y: auto;
-      padding: 12px 0;
+      padding: 8px 0 24px;
+      transition: top .25s ease, height .25s ease;
     }
-    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar { width: 3px; }
     .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
     .sidebar-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text2);
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--text3);
       text-transform: uppercase;
-      letter-spacing: .08em;
-      padding: 12px 16px 4px;
+      letter-spacing: .1em;
+      padding: 16px 14px 5px;
     }
     .sidebar-item {
-      display: flex; align-items: center; gap: 8px;
-      padding: 6px 16px;
+      display: flex; align-items: center; gap: 7px;
+      padding: 5px 14px;
       font-size: 13px;
       color: var(--text2);
       text-decoration: none;
       border-left: 2px solid transparent;
       cursor: pointer;
-      transition: all .12s;
+      transition: all .1s;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -152,74 +223,60 @@
     .sidebar-item.active {
       color: var(--accent);
       border-left-color: var(--accent);
-      background: rgba(88,166,255,.08);
-      font-weight: 500;
+      background: rgba(88,166,255,.09);
+      font-weight: 600;
     }
     .num {
-      font-size: 11px;
-      color: var(--text2);
-      background: var(--bg3);
+      font-size: 10.5px;
+      color: var(--text3);
+      background: var(--bg4);
       border-radius: 4px;
       padding: 1px 5px;
       font-family: var(--font-mono);
       flex-shrink: 0;
+      transition: all .1s;
     }
-    .sidebar-item.active .num { background: rgba(88,166,255,.2); color: var(--accent); }
+    .sidebar-item.active .num { background: rgba(88,166,255,.18); color: var(--accent); }
 
-    /* Mobile sidebar toggle */
-    .sidebar-toggle {
-      display: none;
-      padding: 5px 10px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text2);
-      cursor: pointer;
-      font-size: 17px;
-    }
     .sidebar-overlay {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.5);
+      background: rgba(0,0,0,.55);
       z-index: 90;
+      backdrop-filter: blur(2px);
     }
 
     /* ── Main content ── */
     .main {
       flex: 1;
       min-width: 0;
-      padding: 40px 52px 80px;
-      max-width: 920px;
+      padding: 44px 56px 100px;
+      max-width: 940px;
     }
 
-    @media(max-width: 900px) {
-      .sidebar {
-        position: fixed;
-        top: var(--header-h);
-        left: -100%;
-        z-index: 95;
-        transition: left .2s;
-        height: calc(100vh - var(--header-h));
-      }
-      .sidebar.open { left: 0; }
-      .sidebar-toggle { display: flex; align-items: center; }
-      .sidebar-overlay.open { display: block; }
-      .main { padding: 24px 20px 60px; max-width: 100%; }
+    /* ── Reading progress ── */
+    #progress {
+      position: fixed;
+      top: calc(var(--banner-h) + var(--header-h));
+      left: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      width: 0%;
+      z-index: 150;
+      transition: width .08s linear, top .25s ease;
     }
 
     /* ── Loading ── */
     .loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       height: 50vh;
       color: var(--text2);
-      font-size: 15px;
+      font-size: 14px;
       gap: 10px;
     }
     .spinner {
-      width: 20px; height: 20px;
+      width: 18px; height: 18px;
       border-radius: 50%;
       border: 2px solid var(--border);
       border-top-color: var(--accent);
@@ -228,293 +285,399 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── Markdown body ── */
-    .md-body h1 { font-size: 2em; font-weight: 700; padding-bottom: .3em; border-bottom: 1px solid var(--border); margin: 0 0 24px; }
-    .md-body h2 { font-size: 1.5em; font-weight: 700; padding-bottom: .3em; border-bottom: 1px solid var(--border); margin: 40px 0 16px; }
-    .md-body h3 { font-size: 1.2em; font-weight: 600; margin: 28px 0 12px; }
-    .md-body h4 { font-size: 1em; font-weight: 600; margin: 20px 0 8px; }
+    .md-body { font-size: 15px; }
+    .md-body h1 {
+      font-size: 1.9em; font-weight: 800;
+      padding-bottom: .4em;
+      border-bottom: 1px solid var(--border);
+      margin: 0 0 28px;
+      letter-spacing: -.02em;
+    }
+    .md-body h2 {
+      font-size: 1.4em; font-weight: 700;
+      padding-bottom: .3em;
+      border-bottom: 1px solid var(--border);
+      margin: 44px 0 18px;
+      letter-spacing: -.01em;
+    }
+    .md-body h3 { font-size: 1.15em; font-weight: 600; margin: 30px 0 12px; }
+    .md-body h4 { font-size: 1em; font-weight: 600; margin: 22px 0 8px; color: var(--text2); }
     .md-body p { margin: 0 0 16px; }
     .md-body a { color: var(--accent); text-decoration: none; }
     .md-body a:hover { text-decoration: underline; }
-    .md-body ul, .md-body ol { margin: 0 0 16px; padding-left: 2em; }
-    .md-body li { margin: 4px 0; }
+    .md-body ul, .md-body ol { margin: 0 0 16px; padding-left: 1.8em; }
+    .md-body li { margin: 5px 0; }
     .md-body blockquote {
       margin: 0 0 20px;
-      padding: 12px 16px;
-      border-left: 4px solid var(--accent);
-      background: var(--bg2);
-      border-radius: 0 6px 6px 0;
+      padding: 12px 18px;
+      border-left: 3px solid var(--accent);
+      background: rgba(88,166,255,.06);
+      border-radius: 0 var(--radius) var(--radius) 0;
     }
-    .md-body blockquote p { margin: 0; color: var(--text2); }
-    .code-wrapper { position: relative; margin: 0 0 16px; }
+    .md-body blockquote p { margin: 0; color: var(--text2); font-style: italic; }
+    .code-wrapper { position: relative; margin: 0 0 18px; border-radius: var(--radius); overflow: hidden; }
+    .code-lang {
+      position: absolute; top: 0; left: 0;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text3);
+      background: var(--bg4);
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      border-radius: 0 0 6px 0;
+    }
     .md-body pre {
       background: var(--bg2) !important;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius);
       overflow-x: auto;
       margin: 0;
     }
     .md-body pre code {
       display: block;
-      padding: 16px 20px !important;
+      padding: 18px 20px !important;
       font-family: var(--font-mono);
-      font-size: 13px;
-      line-height: 1.6;
+      font-size: 12.5px;
+      line-height: 1.65;
       background: none !important;
     }
     .md-body code:not(pre code) {
       font-family: var(--font-mono);
-      font-size: 85%;
-      padding: .2em .4em;
-      background: rgba(110,118,129,.2);
+      font-size: 84%;
+      padding: .15em .45em;
+      background: rgba(110,118,129,.15);
       border-radius: 4px;
+      border: 1px solid var(--border2);
     }
     .md-body table {
       width: 100%;
       border-collapse: collapse;
-      margin: 0 0 20px;
-      font-size: 14px;
+      margin: 0 0 22px;
+      font-size: 13.5px;
       display: block;
       overflow-x: auto;
+      border-radius: var(--radius);
+      overflow: hidden;
     }
     .md-body th {
-      background: var(--bg2);
-      padding: 9px 14px;
+      background: var(--bg3);
+      padding: 9px 16px;
       text-align: left;
       border: 1px solid var(--border);
       font-weight: 600;
+      font-size: 12.5px;
+      letter-spacing: .02em;
+      color: var(--text2);
     }
-    .md-body td { padding: 7px 14px; border: 1px solid var(--border); vertical-align: top; }
-    .md-body tr:nth-child(even) td { background: rgba(255,255,255,.02); }
-    [data-theme="light"] .md-body tr:nth-child(even) td { background: rgba(0,0,0,.02); }
-    .md-body hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
-    .md-body strong { font-weight: 600; }
-    .md-body img { max-width: 100%; border-radius: 6px; }
+    .md-body td { padding: 8px 16px; border: 1px solid var(--border); vertical-align: top; }
+    .md-body tr:hover td { background: rgba(88,166,255,.03); }
+    .md-body hr { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+    .md-body strong { font-weight: 600; color: var(--text); }
+    .md-body img { max-width: 100%; border-radius: var(--radius); }
 
     /* Copy button */
     .copy-btn {
       position: absolute;
       top: 8px; right: 8px;
-      padding: 3px 9px;
+      padding: 3px 10px;
       border-radius: 5px;
       font-size: 11px;
-      background: var(--bg3);
+      background: var(--bg4);
       border: 1px solid var(--border);
-      color: var(--text2);
+      color: var(--text3);
       cursor: pointer;
       opacity: 0;
-      transition: opacity .15s;
+      transition: opacity .15s, color .15s;
     }
     .code-wrapper:hover .copy-btn { opacity: 1; }
-    .copy-btn:hover { background: var(--border); color: var(--text); }
-    .copy-btn.copied { color: var(--green); border-color: var(--green); }
-
-    /* ── Reading progress bar ── */
-    #progress {
-      position: fixed;
-      top: var(--header-h); left: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--accent), var(--purple));
-      width: 0%;
-      z-index: 200;
-      transition: width .1s;
-    }
+    .copy-btn:hover { color: var(--text); border-color: var(--text2); }
+    .copy-btn.copied { color: var(--green); border-color: var(--green); opacity: 1; }
 
     /* ── Back to top ── */
     #back-top {
       position: fixed;
       bottom: 28px; right: 24px;
-      width: 38px; height: 38px;
+      width: 36px; height: 36px;
       border-radius: 50%;
-      background: var(--accent);
+      background: var(--accent2);
       color: #fff;
       border: none;
       cursor: pointer;
-      font-size: 17px;
+      font-size: 16px;
       display: none;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 14px rgba(0,0,0,.3);
-      transition: transform .15s;
+      box-shadow: 0 4px 14px rgba(88,166,255,.35);
+      transition: transform .15s, opacity .15s;
+      opacity: .9;
     }
-    #back-top:hover { transform: scale(1.1); }
+    #back-top:hover { transform: scale(1.1); opacity: 1; }
     #back-top.show { display: flex; }
 
-    /* ── Home page ── */
+    /* ── Home hero ── */
     .home-hero {
-      padding: 48px 0 32px;
+      padding: 52px 0 36px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 36px;
+      margin-bottom: 40px;
+      position: relative;
+    }
+    .home-hero::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -56px; right: -56px; bottom: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(88,166,255,.07) 0%, transparent 70%);
+      pointer-events: none;
     }
     .home-hero h1 {
-      font-size: 2.4em;
-      font-weight: 800;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--purple) 100%);
+      font-size: 2.6em;
+      font-weight: 900;
+      letter-spacing: -.04em;
+      line-height: 1.15;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #79c0ff 0%, var(--accent) 35%, var(--purple) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 14px;
-      line-height: 1.25;
     }
     .home-hero p {
       font-size: 1.05em;
       color: var(--text2);
-      max-width: 600px;
-      margin-bottom: 24px;
-      line-height: 1.7;
+      max-width: 580px;
+      margin-bottom: 26px;
+      line-height: 1.75;
     }
-    .home-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+    .home-badges { display: flex; gap: 7px; flex-wrap: wrap; }
     .badge {
       padding: 3px 11px;
       border-radius: 20px;
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 600;
       border: 1px solid;
     }
-    .badge-blue  { background: rgba(88,166,255,.1);  color: var(--accent);  border-color: rgba(88,166,255,.3); }
-    .badge-green { background: rgba(63,185,80,.1);   color: var(--green);   border-color: rgba(63,185,80,.3); }
-    .badge-purple{ background: rgba(188,140,255,.1); color: var(--purple);  border-color: rgba(188,140,255,.3); }
-    .badge-orange{ background: rgba(210,153,34,.1);  color: var(--orange);  border-color: rgba(210,153,34,.3); }
+    .badge-blue   { background: rgba(88,166,255,.1);  color: #79c0ff; border-color: rgba(88,166,255,.25); }
+    .badge-green  { background: rgba(63,185,80,.1);   color: #56d364; border-color: rgba(63,185,80,.25); }
+    .badge-purple { background: rgba(188,140,255,.1); color: var(--purple); border-color: rgba(188,140,255,.25); }
+    .badge-orange { background: rgba(210,153,34,.1);  color: #e3b341; border-color: rgba(210,153,34,.25); }
 
-    .stat-row {
-      display: flex;
-      gap: 0;
-      background: var(--bg2);
+    /* ── Stats ── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 1px;
+      background: var(--border);
       border: 1px solid var(--border);
       border-radius: 12px;
-      margin: 32px 0;
       overflow: hidden;
+      margin: 32px 0;
     }
     .stat {
-      flex: 1;
+      background: var(--bg2);
       text-align: center;
-      padding: 20px 12px;
-      border-right: 1px solid var(--border);
+      padding: 18px 8px;
+      transition: background .15s;
     }
-    .stat:last-child { border-right: none; }
-    .stat-num { font-size: 1.8em; font-weight: 800; color: var(--accent); line-height: 1; }
-    .stat-label { font-size: 11px; color: var(--text2); margin-top: 4px; }
+    .stat:hover { background: var(--bg3); }
+    .stat-num {
+      font-size: 1.7em;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+      letter-spacing: -.03em;
+    }
+    .stat-label { font-size: 10.5px; color: var(--text3); margin-top: 5px; line-height: 1.3; }
 
+    /* ── Section title ── */
     .section-title {
-      font-size: 1.1em;
+      font-size: 1em;
       font-weight: 700;
-      color: var(--text);
-      margin: 36px 0 16px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin: 40px 0 16px;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
-    .section-title::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
+    /* ── Note box ── */
+    .note-box {
+      background: rgba(88,166,255,.05);
+      border: 1px solid rgba(88,166,255,.2);
+      border-radius: var(--radius);
+      padding: 13px 16px;
+      font-size: 13px;
+      color: var(--text2);
+      margin-bottom: 32px;
+      display: flex;
+      gap: 9px;
+      line-height: 1.6;
+    }
+    .note-icon { font-size: 14px; flex-shrink: 0; margin-top: 2px; }
+
+    /* ── Cards ── */
     .card-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+      gap: 10px;
       margin-bottom: 40px;
     }
     .card {
       background: var(--bg2);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 18px;
+      padding: 16px 18px;
       cursor: pointer;
       text-decoration: none;
       display: block;
-      transition: all .15s;
+      transition: border-color .15s, transform .15s, box-shadow .15s;
+      position: relative;
+      overflow: hidden;
     }
-    .card:hover {
-      border-color: var(--accent);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0,0,0,.2);
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      opacity: 0;
+      transition: opacity .15s;
     }
+    .card:hover { border-color: rgba(88,166,255,.4); transform: translateY(-2px); box-shadow: var(--shadow); }
+    .card:hover::before { opacity: 1; }
     .card-num {
-      font-size: 11px;
+      font-size: 10.5px;
       font-family: var(--font-mono);
       color: var(--accent);
-      font-weight: 600;
+      font-weight: 700;
       margin-bottom: 6px;
+      opacity: .8;
     }
-    .card-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
-    .card-desc { font-size: 12.5px; color: var(--text2); line-height: 1.5; }
+    .card-title { font-size: 13.5px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .card-desc { font-size: 12px; color: var(--text2); line-height: 1.55; }
 
-    /* Learning path */
-    .path-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 40px; }
+    /* ── Learning paths ── */
+    .path-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 40px; }
     .path-card {
       background: var(--bg2);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 20px;
+      padding: 18px 20px;
     }
-    .path-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-    .path-icon { font-size: 20px; }
-    .path-title { font-size: 14px; font-weight: 700; color: var(--text); }
-    .path-sub { font-size: 12px; color: var(--text2); }
+    .path-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .path-icon {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .path-icon.a { background: rgba(63,185,80,.12); }
+    .path-icon.b { background: rgba(88,166,255,.12); }
+    .path-icon.c { background: rgba(188,140,255,.12); }
+    .path-title { font-size: 13.5px; font-weight: 700; color: var(--text); }
+    .path-sub { font-size: 11.5px; color: var(--text3); margin-top: 1px; }
     .path-step {
       display: flex;
       align-items: flex-start;
-      gap: 10px;
+      gap: 9px;
       padding: 6px 0;
-      font-size: 13px;
+      font-size: 12.5px;
       color: var(--text2);
-      border-top: 1px solid var(--border);
+      border-top: 1px solid var(--border2);
     }
-    .path-step:first-of-type { border-top: none; }
+    .path-step:first-of-type { border-top: none; padding-top: 0; }
     .step-dot {
-      width: 20px; height: 20px;
+      width: 18px; height: 18px;
       border-radius: 50%;
       background: rgba(88,166,255,.1);
-      border: 1px solid rgba(88,166,255,.3);
+      border: 1px solid rgba(88,166,255,.25);
       color: var(--accent);
-      font-size: 10px;
-      font-weight: 700;
+      font-size: 9.5px;
+      font-weight: 800;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
       margin-top: 1px;
     }
-    .path-step a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    .path-step a { color: var(--accent); text-decoration: none; }
     .path-step a:hover { text-decoration: underline; }
 
-    /* Note box */
-    .note-box {
-      background: rgba(88,166,255,.06);
-      border: 1px solid rgba(88,166,255,.25);
-      border-radius: 8px;
-      padding: 14px 18px;
-      font-size: 13.5px;
+    /* ── Footer ── */
+    footer {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      font-size: 12.5px;
       color: var(--text2);
-      margin-bottom: 32px;
-      display: flex;
-      gap: 10px;
     }
-    .note-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .footer-inner {
+      max-width: 940px;
+      margin: 0 auto;
+      padding: 18px 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .footer-author { display: flex; align-items: center; gap: 6px; }
+    .footer-author strong { color: var(--text); font-weight: 600; }
+    .footer-dot { color: var(--border); }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
 
+    /* ── Responsive ── */
+    @media(max-width: 900px) {
+      .sidebar {
+        position: fixed;
+        top: calc(var(--banner-h) + var(--header-h));
+        left: -100%;
+        z-index: 95;
+        transition: left .2s ease, top .25s ease;
+        height: calc(100vh - var(--banner-h) - var(--header-h));
+      }
+      .sidebar.open { left: 0; }
+      .sidebar-toggle { display: flex; align-items: center; }
+      .sidebar-overlay.open { display: block; }
+      .main { padding: 28px 20px 60px; max-width: 100%; }
+      .footer-inner { padding: 16px 20px; }
+    }
     @media(max-width: 640px) {
-      .stat-row { flex-wrap: wrap; }
-      .stat { min-width: calc(50% - 0px); border-bottom: 1px solid var(--border); }
-      .home-hero h1 { font-size: 1.8em; }
+      .stat-grid { grid-template-columns: repeat(3, 1fr); }
+      .home-hero h1 { font-size: 1.9em; }
+      .home-hero p { font-size: .97em; }
+    }
+    @media(max-width: 420px) {
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
 <body>
 
+<!-- ── Disclaimer banner ── -->
+<div id="disclaimer-banner">
+  <span class="disc-icon">⚠️</span>
+  <span class="disc-text i18n"
+    data-zh="免责声明：Claude Code 并非开源项目，其所有知识产权均归 Anthropic 所有。本站所有文档均为作者基于公开信息的独立源码分析，仅供学习与研究，不代表 Anthropic 官方立场。"
+    data-en="Disclaimer: Claude Code is not open-source. All intellectual property belongs to Anthropic. All content here is independent source analysis for educational purposes only and does not represent Anthropic's official position."
+  >免责声明：Claude Code 并非开源项目，其所有知识产权均归 Anthropic 所有。本站所有文档均为作者基于公开信息的独立源码分析，仅供学习与研究，不代表 Anthropic 官方立场。</span>
+  <button class="disc-close" onclick="dismissBanner()" title="关闭 / Close">✕</button>
+</div>
+
 <div id="progress"></div>
 
 <header>
-  <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">☰</button>
+  <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" aria-label="Menu">☰</button>
   <a class="header-logo" href="#" onclick="loadPage('home');return false;">
     <div class="logo-icon">🔍</div>
     <span>Learn Claude Code</span>
   </a>
   <div class="header-spacer"></div>
-  <a class="header-btn" href="https://github.com/pengr/learn-claude-code" target="_blank" rel="noopener" aria-label="GitHub">
-    <svg height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+  <a class="header-btn" href="https://github.com/pengr/learn-claude-code" target="_blank" rel="noopener">
+    <svg height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
     GitHub
   </a>
-  <button class="header-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+  <button class="header-btn" id="theme-toggle" onclick="toggleTheme()">🌙</button>
   <button class="lang-btn" id="lang-btn" onclick="toggleLang()">EN</button>
 </header>
 
@@ -522,148 +685,117 @@
 
 <div class="layout">
   <nav class="sidebar" id="sidebar">
-    <div class="sidebar-label" style="padding-top:8px">导航 / Nav</div>
+    <div class="sidebar-label" style="padding-top:10px">导航 / Nav</div>
     <a class="sidebar-item" data-page="home" onclick="loadPage('home')">🏠 <span class="i18n" data-zh="首页" data-en="Home">首页</span></a>
     <a class="sidebar-item" data-page="INDEX" onclick="loadPage('INDEX')">📋 <span class="i18n" data-zh="文档索引" data-en="Doc Index">文档索引</span></a>
-    <a class="sidebar-item" data-page="00-overview" onclick="loadPage('00-overview')"><span class="num">00</span> <span class="i18n" data-zh="系统总览" data-en="System Overview">系统总览</span></a>
+    <a class="sidebar-item" data-page="00-overview" onclick="loadPage('00-overview')"><span class="num">00</span><span class="i18n" data-zh="系统总览" data-en="System Overview">系统总览</span></a>
 
-    <div class="sidebar-label"><span class="i18n" data-zh="核心 Agent 机制" data-en="Core Agent Mechanics">核心 Agent 机制</span></div>
+    <div class="sidebar-label"><span class="i18n" data-zh="核心 Agent 机制" data-en="Core Agent">核心 Agent 机制</span></div>
     <a class="sidebar-item" data-page="01-agent-loop" onclick="loadPage('01-agent-loop')"><span class="num">01</span> Agent Loop</a>
-    <a class="sidebar-item" data-page="02-tool-system" onclick="loadPage('02-tool-system')"><span class="num">02</span> <span class="i18n" data-zh="工具系统" data-en="Tool System">工具系统</span></a>
-    <a class="sidebar-item" data-page="03-permission-system" onclick="loadPage('03-permission-system')"><span class="num">03</span> <span class="i18n" data-zh="权限系统" data-en="Permission System">权限系统</span></a>
-    <a class="sidebar-item" data-page="04-compaction" onclick="loadPage('04-compaction')"><span class="num">04</span> <span class="i18n" data-zh="上下文压缩" data-en="Context Compaction">上下文压缩</span></a>
+    <a class="sidebar-item" data-page="02-tool-system" onclick="loadPage('02-tool-system')"><span class="num">02</span><span class="i18n" data-zh="工具系统" data-en="Tool System">工具系统</span></a>
+    <a class="sidebar-item" data-page="03-permission-system" onclick="loadPage('03-permission-system')"><span class="num">03</span><span class="i18n" data-zh="权限系统" data-en="Permissions">权限系统</span></a>
+    <a class="sidebar-item" data-page="04-compaction" onclick="loadPage('04-compaction')"><span class="num">04</span><span class="i18n" data-zh="上下文压缩" data-en="Compaction">上下文压缩</span></a>
 
-    <div class="sidebar-label"><span class="i18n" data-zh="基础设施层" data-en="Infrastructure Layer">基础设施层</span></div>
-    <a class="sidebar-item" data-page="05-api-layer" onclick="loadPage('05-api-layer')"><span class="num">05</span> <span class="i18n" data-zh="API 层" data-en="API Layer">API 层</span></a>
-    <a class="sidebar-item" data-page="06-repl-and-ink" onclick="loadPage('06-repl-and-ink')"><span class="num">06</span> <span class="i18n" data-zh="REPL 界面" data-en="REPL &amp; Ink UI">REPL 界面</span></a>
-    <a class="sidebar-item" data-page="07-commands" onclick="loadPage('07-commands')"><span class="num">07</span> <span class="i18n" data-zh="Commands 系统" data-en="Commands System">Commands 系统</span></a>
-    <a class="sidebar-item" data-page="08-memory-system" onclick="loadPage('08-memory-system')"><span class="num">08</span> <span class="i18n" data-zh="内存系统" data-en="Memory System">内存系统</span></a>
-    <a class="sidebar-item" data-page="09-mcp" onclick="loadPage('09-mcp')"><span class="num">09</span> <span class="i18n" data-zh="MCP 集成" data-en="MCP Integration">MCP 集成</span></a>
+    <div class="sidebar-label"><span class="i18n" data-zh="基础设施" data-en="Infrastructure">基础设施</span></div>
+    <a class="sidebar-item" data-page="05-api-layer" onclick="loadPage('05-api-layer')"><span class="num">05</span><span class="i18n" data-zh="API 层" data-en="API Layer">API 层</span></a>
+    <a class="sidebar-item" data-page="06-repl-and-ink" onclick="loadPage('06-repl-and-ink')"><span class="num">06</span><span class="i18n" data-zh="REPL 界面" data-en="REPL & Ink">REPL 界面</span></a>
+    <a class="sidebar-item" data-page="07-commands" onclick="loadPage('07-commands')"><span class="num">07</span><span class="i18n" data-zh="Commands" data-en="Commands">Commands</span></a>
+    <a class="sidebar-item" data-page="08-memory-system" onclick="loadPage('08-memory-system')"><span class="num">08</span><span class="i18n" data-zh="内存系统" data-en="Memory">内存系统</span></a>
+    <a class="sidebar-item" data-page="09-mcp" onclick="loadPage('09-mcp')"><span class="num">09</span><span class="i18n" data-zh="MCP 集成" data-en="MCP">MCP 集成</span></a>
 
-    <div class="sidebar-label"><span class="i18n" data-zh="配置、状态与数据" data-en="Config, State &amp; Data">配置、状态与数据</span></div>
-    <a class="sidebar-item" data-page="10-state-and-config" onclick="loadPage('10-state-and-config')"><span class="num">10</span> <span class="i18n" data-zh="状态与配置" data-en="State &amp; Config">状态与配置</span></a>
-    <a class="sidebar-item" data-page="11-cost-and-history" onclick="loadPage('11-cost-and-history')"><span class="num">11</span> <span class="i18n" data-zh="成本与历史" data-en="Cost &amp; History">成本与历史</span></a>
+    <div class="sidebar-label"><span class="i18n" data-zh="配置与数据" data-en="Config & Data">配置与数据</span></div>
+    <a class="sidebar-item" data-page="10-state-and-config" onclick="loadPage('10-state-and-config')"><span class="num">10</span><span class="i18n" data-zh="状态与配置" data-en="State & Config">状态与配置</span></a>
+    <a class="sidebar-item" data-page="11-cost-and-history" onclick="loadPage('11-cost-and-history')"><span class="num">11</span><span class="i18n" data-zh="成本与历史" data-en="Cost & History">成本与历史</span></a>
 
-    <div class="sidebar-label"><span class="i18n" data-zh="高级特性" data-en="Advanced Features">高级特性</span></div>
-    <a class="sidebar-item" data-page="12-advanced-features" onclick="loadPage('12-advanced-features')"><span class="num">12</span> <span class="i18n" data-zh="高级特性" data-en="Advanced Features">高级特性</span></a>
-    <a class="sidebar-item" data-page="13-security" onclick="loadPage('13-security')"><span class="num">13</span> <span class="i18n" data-zh="安全机制" data-en="Security">安全机制</span></a>
-    <a class="sidebar-item" data-page="14-misc-features" onclick="loadPage('14-misc-features')"><span class="num">14</span> <span class="i18n" data-zh="杂项特性" data-en="Misc Features">杂项特性</span></a>
-
+    <div class="sidebar-label"><span class="i18n" data-zh="高级特性" data-en="Advanced">高级特性</span></div>
+    <a class="sidebar-item" data-page="12-advanced-features" onclick="loadPage('12-advanced-features')"><span class="num">12</span><span class="i18n" data-zh="高级特性" data-en="Advanced">高级特性</span></a>
+    <a class="sidebar-item" data-page="13-security" onclick="loadPage('13-security')"><span class="num">13</span><span class="i18n" data-zh="安全机制" data-en="Security">安全机制</span></a>
+    <a class="sidebar-item" data-page="14-misc-features" onclick="loadPage('14-misc-features')"><span class="num">14</span><span class="i18n" data-zh="杂项特性" data-en="Misc">杂项特性</span></a>
   </nav>
 
   <main class="main" id="main-content">
-    <div class="loading"><div class="spinner"></div><span class="i18n" data-zh="加载中..." data-en="Loading...">加载中...</span></div>
+    <div class="loading"><div class="spinner"></div><span class="i18n" data-zh="加载中…" data-en="Loading…">加载中…</span></div>
   </main>
 </div>
 
-<footer style="
-  font-size:13px;
-  color:var(--text2);
-  border-top:1px solid var(--border);
-  background:var(--bg2);
-">
-  <div style="
-    max-width:860px;
-    margin:0 auto;
-    padding:20px 32px 14px;
-    background:rgba(210,153,34,.06);
-    border-bottom:1px solid rgba(210,153,34,.2);
-    display:flex;
-    gap:10px;
-    align-items:flex-start;
-  ">
-    <span style="font-size:15px;flex-shrink:0;margin-top:1px;">⚠️</span>
-    <div style="line-height:1.7;">
-      <span class="i18n"
-        data-zh="免责声明：Claude Code 并非开源项目，其所有知识产权（包括源代码、设计、商标）均归 Anthropic 所有。本站所有文档均为作者基于公开信息进行的独立源代码分析，仅供学习与研究目的，不代表 Anthropic 官方立场，亦不构成任何商业用途。"
-        data-en="Disclaimer: Claude Code is not an open-source project. All intellectual property rights (including source code, design, and trademarks) are owned by Anthropic. All documents on this site are independent source code analyses by the author based on publicly available information, for educational and research purposes only. They do not represent the official position of Anthropic and are not intended for any commercial use."
-      >免责声明：Claude Code 并非开源项目，其所有知识产权（包括源代码、设计、商标）均归 Anthropic 所有。本站所有文档均为作者基于公开信息进行的独立源代码分析，仅供学习与研究目的，不代表 Anthropic 官方立场，亦不构成任何商业用途。</span>
+<footer>
+  <div class="footer-inner">
+    <div class="footer-author">
+      <span>Made with ❤️ by</span>
+      <strong>Ru Peng (a.k.a Perry)</strong>
     </div>
-  </div>
-  <div style="text-align:center;padding:16px 20px;">
-    <span>Made with ❤️ by <strong style="color:var(--text)">Ru Peng (a.k.a Perry)</strong></span>
-    &nbsp;·&nbsp;
-    <span class="i18n" data-zh="最后更新" data-en="Last updated">最后更新</span>
-    <span id="footer-date"></span>
-    &nbsp;·&nbsp;
-    <a href="https://github.com/pengr/learn-claude-code" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">GitHub</a>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <span>
+        <span class="i18n" data-zh="最后更新" data-en="Last updated">最后更新</span>
+        <span id="footer-date"></span>
+      </span>
+      <span class="footer-dot">·</span>
+      <a href="https://github.com/pengr/learn-claude-code" target="_blank" rel="noopener">GitHub</a>
+    </div>
   </div>
 </footer>
 
 <button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">↑</button>
 
 <script>
-  document.getElementById('footer-date').textContent = new Date('2026-03-31').toLocaleDateString(
-    document.documentElement.getAttribute('data-lang') === 'en' ? 'en-US' : 'zh-CN',
-    { year:'numeric', month:'long', day:'numeric' }
-  );
-</script>
-
-<script>
-/* ── i18n data ── */
+/* ── i18n ── */
 const I18N = {
   zh: {
-    copy: '复制', copied: '已复制!',
-    loadFail: '加载失败',
-    loading: '加载中...',
-    heroTitle: 'Learn Claude Code',
-    heroSubtitle: '基于 Claude Code 源码（~1332 个 TypeScript 文件）的完整技术分析文档集。深入理解这款 AI Coding Agent 的每一个核心系统。',
-    statsLabels: ['TypeScript 文件', '工具数量', '斜杠命令', 'AppState 字段', 'query.ts 行数', '文档章节'],
-    docNoteLabel: '📘 文档语言说明',
-    docNote: '所有技术文档（docs/）均为中文撰写，完整分析了 Claude Code 的英文源码。导航界面支持中英双语切换。',
-    allChapters: '全部章节',
-    learningPaths: '学习路径',
-    pathA: { title: '快速了解', sub: '约 30 分钟', steps: ['系统总览 — 建立整体概念','INDEX — 文档导航索引'] },
-    pathB: { title: '技术深度', sub: '2–3 小时', steps: ['系统总览','Agent Loop — 理解核心循环','工具系统 — 理解工具机制','上下文压缩 — 最复杂的优化','API 层 — Prompt Cache'] },
-    pathC: { title: '构建类似系统', sub: '全部文档', steps: ['按顺序阅读全部 15 份文档','每份约 20–40 分钟','涵盖约 95% 核心系统'] },
-    cards: [
-      { num:'00', title:'系统总览', desc:'架构图、15个核心系统速查、关键数字与技术决策解析' },
-      { num:'01', title:'Agent Loop', desc:'query.ts 1729行深度解析：8个阶段、State状态机、终止条件' },
-      { num:'02', title:'工具系统', desc:'44个工具完整清单、buildTool()工厂、ToolUseContext字段' },
-      { num:'03', title:'权限系统', desc:'7层权限流水线、6种模式、Glob匹配、危险命令检测' },
-      { num:'04', title:'上下文压缩', desc:'4层递进式压缩：Snip → Microcompact → Collapse → Autocompact' },
-      { num:'05', title:'API 层', desc:'4种后端、OAuth PKCE 7步流程、Prompt Cache插入规则、withRetry' },
-      { num:'06', title:'REPL 界面', desc:'自定义Ink Fork、双缓冲渲染、REPL状态机、setToolJSX注入' },
-      { num:'07', title:'Commands 系统', desc:'88+ 斜杠命令、3种类型、调度流程、Skill格式' },
-      { num:'08', title:'内存系统', desc:'CLAUDE.md 7层优先级、@import语法、memdir、Session Memory阈值' },
-      { num:'09', title:'MCP 集成', desc:'6种传输协议、MCPServerConnection状态机、工具注册、配置格式' },
-      { num:'10', title:'状态与配置', desc:'AppState 450+字段、不可变更新、5层配置优先级、11次数据库迁移' },
-      { num:'11', title:'成本与历史', desc:'模型定价表、成本公式、history.jsonl、paste-cache、Esc撤销机制' },
-      { num:'12', title:'高级特性', desc:'多Agent Fork优化、Bridge远程控制、LSP集成、插件系统' },
-      { num:'13', title:'安全机制', desc:'7层权限流水线、Windows绕过防御、Auto模式ML分类器、DenialTracking' },
-      { num:'14', title:'杂项特性', desc:'Vim 11状态机、Keybindings 19上下文、Voice 3层门控、Teleport、VCR' },
+    copy:'复制', copied:'已复制!', loadFail:'加载失败', loading:'加载中…',
+    heroTitle:'Learn Claude Code',
+    heroSubtitle:'基于 Claude Code 源码（~1332 个 TypeScript 文件）的完整技术分析文档集。深入理解这款 AI Coding Agent 的每一个核心系统。',
+    statsLabels:['TypeScript 文件','工具数量','斜杠命令','AppState 字段','query.ts 行数','文档章节'],
+    docNoteLabel:'📘 文档语言说明',
+    docNote:'所有技术文档均为中文撰写，完整分析了 Claude Code 的英文源码。点击右上角 EN 可切换全站为英文。',
+    allChapters:'全部章节', learningPaths:'学习路径',
+    pathA:{ title:'快速了解', sub:'约 30 分钟', icon:'⚡', steps:['系统总览 — 建立整体概念','INDEX — 文档导航索引'] },
+    pathB:{ title:'技术深度', sub:'2–3 小时',   icon:'🔬', steps:['系统总览','Agent Loop — 核心循环','工具系统 — 工具机制','上下文压缩 — 最复杂优化','API 层 — Prompt Cache'] },
+    pathC:{ title:'构建类似系统', sub:'全部文档', icon:'🏗️', steps:['按顺序阅读全部 15 份文档','每份约 20–40 分钟','涵盖约 95% 核心系统'] },
+    cards:[
+      {num:'00',title:'系统总览',desc:'架构图、15个核心系统速查、关键数字与技术决策解析'},
+      {num:'01',title:'Agent Loop',desc:'query.ts 1729行深度解析：8个阶段、State状态机、终止条件'},
+      {num:'02',title:'工具系统',desc:'44个工具完整清单、buildTool()工厂、ToolUseContext字段'},
+      {num:'03',title:'权限系统',desc:'7层权限流水线、6种模式、Glob匹配、危险命令检测'},
+      {num:'04',title:'上下文压缩',desc:'4层递进式压缩：Snip → Microcompact → Collapse → Autocompact'},
+      {num:'05',title:'API 层',desc:'4种后端、OAuth PKCE 7步流程、Prompt Cache插入规则、withRetry'},
+      {num:'06',title:'REPL 界面',desc:'自定义Ink Fork、双缓冲渲染、REPL状态机、setToolJSX注入'},
+      {num:'07',title:'Commands 系统',desc:'88+ 斜杠命令、3种类型、调度流程、Skill格式'},
+      {num:'08',title:'内存系统',desc:'CLAUDE.md 7层优先级、@import语法、memdir、Session Memory阈值'},
+      {num:'09',title:'MCP 集成',desc:'6种传输协议、MCPServerConnection状态机、工具注册、配置格式'},
+      {num:'10',title:'状态与配置',desc:'AppState 450+字段、不可变更新、5层配置优先级、11次数据库迁移'},
+      {num:'11',title:'成本与历史',desc:'模型定价表、成本公式、history.jsonl、paste-cache、Esc撤销机制'},
+      {num:'12',title:'高级特性',desc:'多Agent Fork优化、Bridge远程控制、LSP集成、插件系统'},
+      {num:'13',title:'安全机制',desc:'7层权限流水线、Windows绕过防御、Auto模式ML分类器、DenialTracking'},
+      {num:'14',title:'杂项特性',desc:'Vim 11状态机、Keybindings 19上下文、Voice 3层门控、Teleport、VCR'},
     ],
   },
   en: {
-    copy: 'Copy', copied: 'Copied!',
-    loadFail: 'Load failed',
-    loading: 'Loading...',
-    heroTitle: 'Learn Claude Code',
-    heroSubtitle: 'Complete technical analysis of Claude Code internals (~1332 TypeScript files). Understand every core system of this AI Coding Agent in depth.',
-    statsLabels: ['TypeScript Files', 'Tools', 'Slash Commands', 'AppState Fields', 'query.ts Lines', 'Doc Chapters'],
-    docNoteLabel: '📘 Note on Document Language',
-    docNote: 'All technical documents (docs/) are written in Chinese, with complete analysis of the English Claude Code source code. The navigation UI supports both Chinese and English.',
-    allChapters: 'All Chapters',
-    learningPaths: 'Learning Paths',
-    pathA: { title: 'Quick Overview', sub: '~30 minutes', steps: ['System Overview — Build a mental model','INDEX — Doc navigation index'] },
-    pathB: { title: 'Technical Deep Dive', sub: '2–3 hours', steps: ['System Overview','Agent Loop — Core loop mechanics','Tool System — How tools work','Context Compaction — Most complex optimization','API Layer — Prompt Cache'] },
-    pathC: { title: 'Build a Similar System', sub: 'All docs', steps: ['Read all 15 documents in order','~20–40 min each','Covers ~95% of core systems'] },
-    cards: [
-      { num:'00', title:'System Overview', desc:'Architecture diagram, 15 core systems quick-ref, key numbers & design decisions' },
-      { num:'01', title:'Agent Loop', desc:'Deep dive into query.ts (1729 lines): 8 phases, State machine, termination conditions' },
-      { num:'02', title:'Tool System', desc:'Complete list of 44 tools, buildTool() factory, ToolUseContext fields & lifecycle' },
-      { num:'03', title:'Permission System', desc:'7-stage pipeline, 6 permission modes, Glob matching, dangerous command detection' },
-      { num:'04', title:'Context Compaction', desc:'4-layer compaction: Snip → Microcompact → Collapse → Autocompact with thresholds' },
-      { num:'05', title:'API Layer', desc:'4 backends, OAuth PKCE 7-step flow, Prompt Cache insertion rules, withRetry algorithm' },
-      { num:'06', title:'REPL & Ink UI', desc:'Custom Ink fork, double-buffered rendering, REPL state machine, setToolJSX injection' },
-      { num:'07', title:'Commands System', desc:'88+ slash commands, 3 types, dispatch flow, Skill format specification' },
-      { num:'08', title:'Memory System', desc:'CLAUDE.md 7-tier priority, @import syntax, memdir, Session Memory thresholds' },
-      { num:'09', title:'MCP Integration', desc:'6 transport protocols, MCPServerConnection state machine, tool registration' },
-      { num:'10', title:'State & Config', desc:'AppState 450+ fields, immutable updates, 5-level config priority, 11 DB migrations' },
-      { num:'11', title:'Cost & History', desc:'Model pricing table, cost formula, history.jsonl, paste-cache, Esc undo mechanism' },
-      { num:'12', title:'Advanced Features', desc:'Multi-Agent Fork Cache optimization, Bridge remote control, LSP integration, plugins' },
-      { num:'13', title:'Security', desc:'7-layer pipeline, Windows bypass defense, Auto-mode ML classifier, DenialTracking' },
-      { num:'14', title:'Misc Features', desc:'Vim 11-state machine, Keybindings 19 contexts, Voice 3-gate, Teleport, VCR fixtures' },
+    copy:'Copy', copied:'Copied!', loadFail:'Load failed', loading:'Loading…',
+    heroTitle:'Learn Claude Code',
+    heroSubtitle:'Complete technical analysis of Claude Code internals (~1332 TypeScript files). Understand every core system of this AI Coding Agent in depth.',
+    statsLabels:['TypeScript Files','Tools','Slash Cmds','AppState Fields','query.ts Lines','Doc Chapters'],
+    docNoteLabel:'📘 Language Note',
+    docNote:'All technical documents are written in Chinese with full analysis of the English Claude Code source. Click EN (top-right) to switch the entire site to English.',
+    allChapters:'All Chapters', learningPaths:'Learning Paths',
+    pathA:{ title:'Quick Overview', sub:'~30 minutes', icon:'⚡', steps:['System Overview — Build mental model','INDEX — Doc navigation index'] },
+    pathB:{ title:'Technical Deep Dive', sub:'2–3 hours', icon:'🔬', steps:['System Overview','Agent Loop — Core loop','Tool System — Tool mechanics','Context Compaction — Hardest optimization','API Layer — Prompt Cache'] },
+    pathC:{ title:'Build Similar System', sub:'All docs', icon:'🏗️', steps:['Read all 15 documents in order','~20–40 min each','Covers ~95% of core systems'] },
+    cards:[
+      {num:'00',title:'System Overview',desc:'Architecture diagram, 15 core systems quick-ref, key numbers & design decisions'},
+      {num:'01',title:'Agent Loop',desc:'Deep dive into query.ts (1729 lines): 8 phases, State machine, termination'},
+      {num:'02',title:'Tool System',desc:'Complete list of 44 tools, buildTool() factory, ToolUseContext fields & lifecycle'},
+      {num:'03',title:'Permission System',desc:'7-stage pipeline, 6 permission modes, Glob matching, dangerous command detection'},
+      {num:'04',title:'Context Compaction',desc:'4-layer compaction: Snip → Microcompact → Collapse → Autocompact'},
+      {num:'05',title:'API Layer',desc:'4 backends, OAuth PKCE 7-step flow, Prompt Cache insertion rules, withRetry'},
+      {num:'06',title:'REPL & Ink UI',desc:'Custom Ink fork, double-buffered rendering, REPL state machine, setToolJSX'},
+      {num:'07',title:'Commands System',desc:'88+ slash commands, 3 types, dispatch flow, Skill format specification'},
+      {num:'08',title:'Memory System',desc:'CLAUDE.md 7-tier priority, @import syntax, memdir, Session Memory thresholds'},
+      {num:'09',title:'MCP Integration',desc:'6 transport protocols, MCPServerConnection state machine, tool registration'},
+      {num:'10',title:'State & Config',desc:'AppState 450+ fields, immutable updates, 5-level config priority, 11 DB migrations'},
+      {num:'11',title:'Cost & History',desc:'Model pricing table, cost formula, history.jsonl, paste-cache, Esc undo'},
+      {num:'12',title:'Advanced Features',desc:'Multi-Agent Fork Cache optimization, Bridge remote control, LSP, plugins'},
+      {num:'13',title:'Security',desc:'7-layer pipeline, Windows bypass defense, Auto-mode ML classifier, DenialTracking'},
+      {num:'14',title:'Misc Features',desc:'Vim 11-state machine, Keybindings 19 contexts, Voice 3-gate, Teleport, VCR'},
     ],
   },
 };
@@ -674,11 +806,26 @@ const PAGE_KEYS = [
   '10-state-and-config','11-cost-and-history','12-advanced-features','13-security','14-misc-features',
 ];
 
-/* ── State ── */
-let currentLang = localStorage.getItem('lang') || 'zh';
+let currentLang  = localStorage.getItem('lang')  || 'zh';
 let currentTheme = localStorage.getItem('theme') || 'dark';
 
-/* ── Marked setup ── */
+/* ── Banner ── */
+function dismissBanner() {
+  document.getElementById('disclaimer-banner').classList.add('hidden');
+  document.documentElement.style.setProperty('--banner-h', '0px');
+  localStorage.setItem('banner-dismissed', '1');
+}
+function initBanner() {
+  if (localStorage.getItem('banner-dismissed')) {
+    document.getElementById('disclaimer-banner').classList.add('hidden');
+    document.documentElement.style.setProperty('--banner-h', '0px');
+  } else {
+    const h = document.getElementById('disclaimer-banner').offsetHeight || 40;
+    document.documentElement.style.setProperty('--banner-h', h + 'px');
+  }
+}
+
+/* ── Marked ── */
 marked.setOptions({ breaks: true, gfm: true });
 const renderer = new marked.Renderer();
 renderer.code = function(code, lang) {
@@ -690,25 +837,25 @@ renderer.code = function(code, lang) {
       try { hl = hljs.highlightAuto(code).value; } catch(e) {}
     }
   }
-  const lbl = currentLang === 'zh' ? '复制' : 'Copy';
-  return `<div class="code-wrapper"><pre><code class="hljs">${hl}</code></pre><button class="copy-btn" onclick="copyCode(this)">${lbl}</button></div>`;
+  const lbl     = currentLang === 'zh' ? '复制' : 'Copy';
+  const langTag = lang ? `<span class="code-lang">${lang}</span>` : '';
+  return `<div class="code-wrapper">${langTag}<pre><code class="hljs">${hl}</code></pre><button class="copy-btn" onclick="copyCode(this)">${lbl}</button></div>`;
 };
 renderer.link = function(href, title, text) {
   if (href && href.match(/^\.?\/?[\w-]+\.md$/)) {
-    const p = href.replace(/^\.\//,'').replace(/\.md$/, '');
+    const p = href.replace(/^\.\//,'').replace(/\.md$/,'');
     return `<a href="#" onclick="loadPage('${p}');return false;">${text}</a>`;
   }
   const ext = href && (href.startsWith('http') || href.startsWith('//'));
-  return `<a href="${href}" ${ext ? 'target="_blank" rel="noopener"' : ''}>${text}</a>`;
+  return `<a href="${href}"${ext?' target="_blank" rel="noopener"':''}>${text}</a>`;
 };
 marked.use({ renderer });
 
-/* ── Utilities ── */
-function t(key) { return I18N[currentLang][key]; }
+/* ── Utils ── */
+function t(k) { return I18N[currentLang][k]; }
 
 function copyCode(btn) {
-  const code = btn.previousElementSibling.querySelector('code').innerText;
-  navigator.clipboard.writeText(code).then(() => {
+  navigator.clipboard.writeText(btn.previousElementSibling.querySelector('code').innerText).then(() => {
     btn.textContent = t('copied');
     btn.classList.add('copied');
     setTimeout(() => { btn.textContent = t('copy'); btn.classList.remove('copied'); }, 1500);
@@ -722,7 +869,7 @@ function applyLang() {
     el.textContent = el.dataset[currentLang] || el.textContent;
   });
   const dateEl = document.getElementById('footer-date');
-  if (dateEl) dateEl.textContent = new Date('2026-03-31').toLocaleDateString(
+  if (dateEl) dateEl.textContent = ' ' + new Date('2026-04-01').toLocaleDateString(
     currentLang === 'en' ? 'en-US' : 'zh-CN',
     { year:'numeric', month:'long', day:'numeric' }
   );
@@ -732,9 +879,7 @@ function applyLang() {
 function toggleLang() {
   currentLang = currentLang === 'zh' ? 'en' : 'zh';
   applyLang();
-  const h = location.hash.slice(1) || 'home';
-  // Reload current page content in new language
-  loadPage(h);
+  loadPage(location.hash.slice(1) || 'home');
 }
 
 function toggleTheme() {
@@ -748,9 +893,7 @@ function toggleTheme() {
 }
 
 function setActive(page) {
-  document.querySelectorAll('.sidebar-item').forEach(e => {
-    e.classList.toggle('active', e.dataset.page === page);
-  });
+  document.querySelectorAll('.sidebar-item').forEach(e => e.classList.toggle('active', e.dataset.page === page));
 }
 
 function toggleSidebar() {
@@ -758,21 +901,19 @@ function toggleSidebar() {
   document.getElementById('sidebar-overlay').classList.toggle('open');
 }
 
-/* ── Scroll / progress ── */
 window.addEventListener('scroll', () => {
-  const scrolled = window.scrollY;
-  const total = document.body.scrollHeight - window.innerHeight;
-  document.getElementById('progress').style.width = total > 0 ? (scrolled / total * 100) + '%' : '0%';
-  document.getElementById('back-top').classList.toggle('show', scrolled > 400);
-}, { passive: true });
+  const s = window.scrollY, d = document.body.scrollHeight - window.innerHeight;
+  document.getElementById('progress').style.width = d > 0 ? (s/d*100)+'%' : '0%';
+  document.getElementById('back-top').classList.toggle('show', s > 400);
+}, { passive:true });
 
-/* ── Home page ── */
+/* ── Home ── */
 function renderHome() {
-  const d = I18N[currentLang];
-  const m = document.getElementById('main-content');
+  const d  = I18N[currentLang];
+  const m  = document.getElementById('main-content');
+  const nums = ['1,332','44','88+','450+','1,729','15'];
 
-  const statsNums  = ['1,332', '44', '88+', '450+', '1,729', '15'];
-  const statsRow = statsNums.map((n, i) =>
+  const statsHtml = nums.map((n,i) =>
     `<div class="stat"><div class="stat-num">${n}</div><div class="stat-label">${d.statsLabels[i]}</div></div>`
   ).join('');
 
@@ -788,30 +929,24 @@ function renderHome() {
        <span class="badge badge-orange">1729-line Agent Loop</span>
        <span class="badge badge-blue">4-layer Compaction</span>`;
 
-  const cards = d.cards.map((c, i) =>
+  const cards = d.cards.map((c,i) =>
     `<a class="card" href="#" onclick="loadPage('${PAGE_KEYS[i]}');return false;">
-      <div class="card-num">Chapter ${c.num}</div>
+      <div class="card-num">Ch.${c.num}</div>
       <div class="card-title">${c.title}</div>
       <div class="card-desc">${c.desc}</div>
     </a>`
   ).join('');
 
-  const pa = d.pathA, pb = d.pathB, pc = d.pathC;
-  const pathASteps = [
-    { page:'00-overview', label: pa.steps[0] },
-    { page:'INDEX',       label: pa.steps[1] },
-  ];
-  const pathBSteps = [
-    { page:'00-overview',   label: pb.steps[0] },
-    { page:'01-agent-loop', label: pb.steps[1] },
-    { page:'02-tool-system',label: pb.steps[2] },
-    { page:'04-compaction', label: pb.steps[3] },
-    { page:'05-api-layer',  label: pb.steps[4] },
-  ];
-  const makeSteps = (steps) => steps.map((s, i) =>
+  const pathLinks = {
+    a:[ {page:'00-overview',label:d.pathA.steps[0]}, {page:'INDEX',label:d.pathA.steps[1]} ],
+    b:[ {page:'00-overview',label:d.pathB.steps[0]}, {page:'01-agent-loop',label:d.pathB.steps[1]},
+        {page:'02-tool-system',label:d.pathB.steps[2]}, {page:'04-compaction',label:d.pathB.steps[3]},
+        {page:'05-api-layer',label:d.pathB.steps[4]} ],
+  };
+  const mkLink = (steps) => steps.map((s,i) =>
     `<div class="path-step"><div class="step-dot">${i+1}</div><div><a href="#" onclick="loadPage('${s.page}');return false;">${s.label}</a></div></div>`
   ).join('');
-  const makeTextSteps = (steps) => steps.map((s, i) =>
+  const mkText = (steps) => steps.map((s,i) =>
     `<div class="path-step"><div class="step-dot">${i+1}</div><div>${s}</div></div>`
   ).join('');
 
@@ -822,7 +957,7 @@ function renderHome() {
   <div class="home-badges">${badges}</div>
 </div>
 
-<div class="stat-row">${statsRow}</div>
+<div class="stat-grid">${statsHtml}</div>
 
 <div class="note-box">
   <div class="note-icon">ℹ️</div>
@@ -832,17 +967,20 @@ function renderHome() {
 <div class="section-title">${d.learningPaths}</div>
 <div class="path-grid">
   <div class="path-card">
-    <div class="path-header"><div class="path-icon">⚡</div><div><div class="path-title">${pa.title}</div><div class="path-sub">${pa.sub}</div></div></div>
-    ${makeSteps(pathASteps)}
-  </div>
+    <div class="path-header">
+      <div class="path-icon a">${d.pathA.icon}</div>
+      <div><div class="path-title">${d.pathA.title}</div><div class="path-sub">${d.pathA.sub}</div></div>
+    </div>${mkLink(pathLinks.a)}</div>
   <div class="path-card">
-    <div class="path-header"><div class="path-icon">🔬</div><div><div class="path-title">${pb.title}</div><div class="path-sub">${pb.sub}</div></div></div>
-    ${makeSteps(pathBSteps)}
-  </div>
+    <div class="path-header">
+      <div class="path-icon b">${d.pathB.icon}</div>
+      <div><div class="path-title">${d.pathB.title}</div><div class="path-sub">${d.pathB.sub}</div></div>
+    </div>${mkLink(pathLinks.b)}</div>
   <div class="path-card">
-    <div class="path-header"><div class="path-icon">🏗️</div><div><div class="path-title">${pc.title}</div><div class="path-sub">${pc.sub}</div></div></div>
-    ${makeTextSteps(pc.steps)}
-  </div>
+    <div class="path-header">
+      <div class="path-icon c">${d.pathC.icon}</div>
+      <div><div class="path-title">${d.pathC.title}</div><div class="path-sub">${d.pathC.sub}</div></div>
+    </div>${mkText(d.pathC.steps)}</div>
 </div>
 
 <div class="section-title">${d.allChapters}</div>
@@ -854,26 +992,16 @@ async function loadPage(page) {
   const m = document.getElementById('main-content');
   setActive(page);
   window.history.pushState({ page }, '', '#' + page);
-
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.remove('open');
 
-  if (page === 'home') {
-    renderHome();
-    window.scrollTo(0, 0);
-    return;
-  }
+  if (page === 'home') { renderHome(); window.scrollTo(0,0); return; }
 
   m.innerHTML = `<div class="loading"><div class="spinner"></div>${t('loading')}</div>`;
-
   try {
-    // Try lang-specific version first, fall back to Chinese (default)
     const prefix = currentLang === 'en' ? 'docs/en/' : 'docs/';
     let r = await fetch(prefix + page + '.md');
-    if (!r.ok && currentLang === 'en') {
-      // fallback to Chinese if English not yet available
-      r = await fetch('docs/' + page + '.md');
-    }
+    if (!r.ok && currentLang === 'en') r = await fetch('docs/' + page + '.md');
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const md = await r.text();
     m.innerHTML = '<div class="md-body">' + marked.parse(md) + '</div>';
@@ -894,12 +1022,10 @@ async function loadPage(page) {
     document.getElementById('hljs-theme').href =
       'https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css';
   }
+  initBanner();
   applyLang();
-  const hash = location.hash.slice(1) || 'home';
-  loadPage(hash);
-  window.addEventListener('popstate', e => {
-    if (e.state && e.state.page) loadPage(e.state.page);
-  });
+  loadPage(location.hash.slice(1) || 'home');
+  window.addEventListener('popstate', e => { if (e.state?.page) loadPage(e.state.page); });
 })();
 </script>
 </body>
