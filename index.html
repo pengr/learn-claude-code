@@ -1,251 +1,850 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN" data-theme="dark" data-lang="zh">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Learn Claude Code — 源码深度解析</title>
+  <meta name="description" content="Learn Claude Code — Deep technical analysis of Claude Code internals based on source code. 基于 Claude Code 源码的完整技术解析文档集。" />
+  <title>Learn Claude Code — 源码深度解析 / Deep Source Analysis</title>
   <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css" id="hljs-theme" />
   <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/highlight.min.js"></script>
   <style>
+    /* ── Variables ── */
     :root {
-      --bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--border:#30363d;
-      --text:#e6edf3;--text2:#8b949e;--accent:#58a6ff;--accent2:#388bfd;
-      --green:#3fb950;--orange:#d29922;--red:#f85149;--purple:#bc8cff;
-      --sidebar-w:272px;--header-h:56px;
-      --font-mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
-      --font-sans:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif;
+      --bg: #0d1117;
+      --bg2: #161b22;
+      --bg3: #1c2128;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text2: #8b949e;
+      --accent: #58a6ff;
+      --accent2: #388bfd;
+      --green: #3fb950;
+      --orange: #d29922;
+      --red: #f85149;
+      --purple: #bc8cff;
+      --sidebar-w: 272px;
+      --header-h: 56px;
+      --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
     }
-    [data-theme="light"]{--bg:#ffffff;--bg2:#f6f8fa;--bg3:#eaeef2;--border:#d0d7de;--text:#1f2328;--text2:#636c76;--accent:#0969da;}
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    html{scroll-behavior:smooth;}
-    body{font-family:var(--font-sans);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;}
-    /* Header */
-    header{position:fixed;top:0;left:0;right:0;height:var(--header-h);background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px;z-index:100;}
-    .header-logo{font-size:17px;font-weight:700;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:8px;white-space:nowrap;}
-    .logo-icon{width:28px;height:28px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;}
-    .header-spacer{flex:1;}
-    .header-btn{padding:5px 13px;border-radius:6px;font-size:13px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px;text-decoration:none;transition:all .15s;}
-    .header-btn:hover{background:var(--bg3);color:var(--text);border-color:var(--accent);}
-    /* Layout */
-    .layout{display:flex;padding-top:var(--header-h);min-height:100vh;}
-    /* Sidebar */
-    .sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--bg2);border-right:1px solid var(--border);height:calc(100vh - var(--header-h));position:sticky;top:var(--header-h);overflow-y:auto;padding:12px 0;}
-    .sidebar::-webkit-scrollbar{width:4px;}
-    .sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-    .sidebar-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;padding:12px 16px 4px;}
-    .sidebar-item{display:flex;align-items:center;gap:8px;padding:6px 16px;font-size:13px;color:var(--text2);text-decoration:none;border-left:2px solid transparent;cursor:pointer;transition:all .12s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-    .sidebar-item:hover{color:var(--text);background:var(--bg3);}
-    .sidebar-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(88,166,255,.08);font-weight:500;}
-    .num{font-size:11px;color:var(--text2);background:var(--bg3);border-radius:4px;padding:1px 5px;font-family:var(--font-mono);flex-shrink:0;}
-    .sidebar-item.active .num{background:rgba(88,166,255,.2);color:var(--accent);}
-    /* Main */
-    .main{flex:1;min-width:0;padding:40px 48px 80px;max-width:900px;}
-    @media(max-width:768px){.sidebar{display:none;}.main{padding:24px 16px 60px;}}
-    /* Loading */
-    .loading{display:flex;align-items:center;justify-content:center;height:50vh;color:var(--text2);font-size:15px;gap:10px;}
-    .spinner{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--accent);animation:spin .6s linear infinite;}
-    @keyframes spin{to{transform:rotate(360deg);}}
-    /* Markdown */
-    .md-body h1{font-size:2em;font-weight:700;padding-bottom:.3em;border-bottom:1px solid var(--border);margin:0 0 24px;}
-    .md-body h2{font-size:1.5em;font-weight:700;padding-bottom:.3em;border-bottom:1px solid var(--border);margin:36px 0 16px;}
-    .md-body h3{font-size:1.2em;font-weight:600;margin:28px 0 12px;}
-    .md-body h4{font-size:1em;font-weight:600;margin:20px 0 8px;}
-    .md-body p{margin:0 0 16px;}
-    .md-body a{color:var(--accent);text-decoration:none;}
-    .md-body a:hover{text-decoration:underline;}
-    .md-body ul,.md-body ol{margin:0 0 16px;padding-left:2em;}
-    .md-body li{margin:4px 0;}
-    .md-body blockquote{margin:0 0 16px;padding:12px 16px;border-left:4px solid var(--accent);background:var(--bg2);border-radius:0 6px 6px 0;color:var(--text2);}
-    .md-body blockquote p{margin:0;color:var(--text2);}
-    .code-wrapper{position:relative;margin:0 0 16px;}
-    .md-body pre{background:var(--bg2)!important;border:1px solid var(--border);border-radius:8px;overflow-x:auto;margin:0;}
-    .md-body pre code{display:block;padding:16px 20px!important;font-family:var(--font-mono);font-size:13px;line-height:1.6;background:none!important;}
-    .md-body code:not(pre code){font-family:var(--font-mono);font-size:85%;padding:.2em .4em;background:rgba(110,118,129,.2);border-radius:4px;}
-    .md-body table{width:100%;border-collapse:collapse;margin:0 0 20px;font-size:14px;display:block;overflow-x:auto;}
-    .md-body th{background:var(--bg2);padding:9px 14px;text-align:left;border:1px solid var(--border);font-weight:600;}
-    .md-body td{padding:7px 14px;border:1px solid var(--border);vertical-align:top;}
-    .md-body tr:nth-child(even) td{background:rgba(255,255,255,.02);}
-    .md-body hr{border:none;border-top:1px solid var(--border);margin:32px 0;}
-    .md-body strong{font-weight:600;}
-    .copy-btn{position:absolute;top:8px;right:8px;padding:3px 9px;border-radius:5px;font-size:11px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);cursor:pointer;opacity:0;transition:opacity .15s;}
-    .code-wrapper:hover .copy-btn{opacity:1;}
-    .copy-btn:hover{background:var(--border);color:var(--text);}
-    .copy-btn.copied{color:var(--green);border-color:var(--green);}
-    /* Progress */
-    #progress{position:fixed;top:var(--header-h);left:0;height:2px;background:var(--accent);width:0%;z-index:200;transition:width .1s;}
-    #back-top{position:fixed;bottom:28px;right:24px;width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:17px;display:none;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.3);}
-    #back-top.show{display:flex;}
-    /* Home */
-    .home-hero{padding:48px 0 32px;border-bottom:1px solid var(--border);margin-bottom:36px;}
-    .home-hero h1{font-size:2.4em;font-weight:800;background:linear-gradient(135deg,var(--accent) 0%,var(--purple) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px;}
-    .home-hero p{font-size:1.05em;color:var(--text2);max-width:580px;margin-bottom:24px;}
-    .home-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0;}
-    .badge{padding:3px 11px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid;}
-    .badge-blue{background:rgba(88,166,255,.1);color:var(--accent);border-color:rgba(88,166,255,.3);}
-    .badge-green{background:rgba(63,185,80,.1);color:var(--green);border-color:rgba(63,185,80,.3);}
-    .badge-purple{background:rgba(188,140,255,.1);color:var(--purple);border-color:rgba(188,140,255,.3);}
-    .stat-row{display:flex;gap:20px;flex-wrap:wrap;padding:20px 24px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin:32px 0;}
-    .stat{text-align:center;min-width:60px;}
-    .stat-num{font-size:1.7em;font-weight:800;color:var(--accent);}
-    .stat-label{font-size:11px;color:var(--text2);margin-top:2px;}
-    .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:14px;margin-bottom:40px;}
-    .card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;cursor:pointer;text-decoration:none;display:block;transition:all .15s;}
-    .card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.2);}
-    .card-num{font-size:11px;font-family:var(--font-mono);color:var(--accent);font-weight:600;margin-bottom:6px;}
-    .card-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px;}
-    .card-desc{font-size:12.5px;color:var(--text2);line-height:1.5;}
+    [data-theme="light"] {
+      --bg: #ffffff;
+      --bg2: #f6f8fa;
+      --bg3: #eaeef2;
+      --border: #d0d7de;
+      --text: #1f2328;
+      --text2: #636c76;
+      --accent: #0969da;
+      --accent2: #0550ae;
+      --green: #1a7f37;
+      --red: #cf222e;
+      --purple: #8250df;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--header-h);
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 20px;
+      z-index: 100;
+    }
+    .header-logo {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+    .logo-icon {
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+    }
+    .header-spacer { flex: 1; }
+    .header-btn {
+      padding: 5px 13px;
+      border-radius: 6px;
+      font-size: 13px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      text-decoration: none;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .header-btn:hover { background: var(--bg3); color: var(--text); border-color: var(--accent); }
+    .lang-btn {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      cursor: pointer;
+      letter-spacing: .04em;
+      transition: all .15s;
+    }
+    .lang-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Layout ── */
+    .layout { display: flex; padding-top: var(--header-h); min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      height: calc(100vh - var(--header-h));
+      position: sticky;
+      top: var(--header-h);
+      overflow-y: auto;
+      padding: 12px 0;
+    }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .sidebar-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      padding: 12px 16px 4px;
+    }
+    .sidebar-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 16px;
+      font-size: 13px;
+      color: var(--text2);
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      cursor: pointer;
+      transition: all .12s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sidebar-item:hover { color: var(--text); background: var(--bg3); }
+    .sidebar-item.active {
+      color: var(--accent);
+      border-left-color: var(--accent);
+      background: rgba(88,166,255,.08);
+      font-weight: 500;
+    }
+    .num {
+      font-size: 11px;
+      color: var(--text2);
+      background: var(--bg3);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: var(--font-mono);
+      flex-shrink: 0;
+    }
+    .sidebar-item.active .num { background: rgba(88,166,255,.2); color: var(--accent); }
+
+    /* Mobile sidebar toggle */
+    .sidebar-toggle {
+      display: none;
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text2);
+      cursor: pointer;
+      font-size: 17px;
+    }
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 90;
+    }
+
+    /* ── Main content ── */
+    .main {
+      flex: 1;
+      min-width: 0;
+      padding: 40px 52px 80px;
+      max-width: 920px;
+    }
+
+    @media(max-width: 900px) {
+      .sidebar {
+        position: fixed;
+        top: var(--header-h);
+        left: -100%;
+        z-index: 95;
+        transition: left .2s;
+        height: calc(100vh - var(--header-h));
+      }
+      .sidebar.open { left: 0; }
+      .sidebar-toggle { display: flex; align-items: center; }
+      .sidebar-overlay.open { display: block; }
+      .main { padding: 24px 20px 60px; max-width: 100%; }
+    }
+
+    /* ── Loading ── */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 50vh;
+      color: var(--text2);
+      font-size: 15px;
+      gap: 10px;
+    }
+    .spinner {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      animation: spin .6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Markdown body ── */
+    .md-body h1 { font-size: 2em; font-weight: 700; padding-bottom: .3em; border-bottom: 1px solid var(--border); margin: 0 0 24px; }
+    .md-body h2 { font-size: 1.5em; font-weight: 700; padding-bottom: .3em; border-bottom: 1px solid var(--border); margin: 40px 0 16px; }
+    .md-body h3 { font-size: 1.2em; font-weight: 600; margin: 28px 0 12px; }
+    .md-body h4 { font-size: 1em; font-weight: 600; margin: 20px 0 8px; }
+    .md-body p { margin: 0 0 16px; }
+    .md-body a { color: var(--accent); text-decoration: none; }
+    .md-body a:hover { text-decoration: underline; }
+    .md-body ul, .md-body ol { margin: 0 0 16px; padding-left: 2em; }
+    .md-body li { margin: 4px 0; }
+    .md-body blockquote {
+      margin: 0 0 20px;
+      padding: 12px 16px;
+      border-left: 4px solid var(--accent);
+      background: var(--bg2);
+      border-radius: 0 6px 6px 0;
+    }
+    .md-body blockquote p { margin: 0; color: var(--text2); }
+    .code-wrapper { position: relative; margin: 0 0 16px; }
+    .md-body pre {
+      background: var(--bg2) !important;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 0;
+    }
+    .md-body pre code {
+      display: block;
+      padding: 16px 20px !important;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      background: none !important;
+    }
+    .md-body code:not(pre code) {
+      font-family: var(--font-mono);
+      font-size: 85%;
+      padding: .2em .4em;
+      background: rgba(110,118,129,.2);
+      border-radius: 4px;
+    }
+    .md-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0 0 20px;
+      font-size: 14px;
+      display: block;
+      overflow-x: auto;
+    }
+    .md-body th {
+      background: var(--bg2);
+      padding: 9px 14px;
+      text-align: left;
+      border: 1px solid var(--border);
+      font-weight: 600;
+    }
+    .md-body td { padding: 7px 14px; border: 1px solid var(--border); vertical-align: top; }
+    .md-body tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+    [data-theme="light"] .md-body tr:nth-child(even) td { background: rgba(0,0,0,.02); }
+    .md-body hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+    .md-body strong { font-weight: 600; }
+    .md-body img { max-width: 100%; border-radius: 6px; }
+
+    /* Copy button */
+    .copy-btn {
+      position: absolute;
+      top: 8px; right: 8px;
+      padding: 3px 9px;
+      border-radius: 5px;
+      font-size: 11px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity .15s;
+    }
+    .code-wrapper:hover .copy-btn { opacity: 1; }
+    .copy-btn:hover { background: var(--border); color: var(--text); }
+    .copy-btn.copied { color: var(--green); border-color: var(--green); }
+
+    /* ── Reading progress bar ── */
+    #progress {
+      position: fixed;
+      top: var(--header-h); left: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--purple));
+      width: 0%;
+      z-index: 200;
+      transition: width .1s;
+    }
+
+    /* ── Back to top ── */
+    #back-top {
+      position: fixed;
+      bottom: 28px; right: 24px;
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-size: 17px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,.3);
+      transition: transform .15s;
+    }
+    #back-top:hover { transform: scale(1.1); }
+    #back-top.show { display: flex; }
+
+    /* ── Home page ── */
+    .home-hero {
+      padding: 48px 0 32px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 36px;
+    }
+    .home-hero h1 {
+      font-size: 2.4em;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--purple) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 14px;
+      line-height: 1.25;
+    }
+    .home-hero p {
+      font-size: 1.05em;
+      color: var(--text2);
+      max-width: 600px;
+      margin-bottom: 24px;
+      line-height: 1.7;
+    }
+    .home-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+    .badge {
+      padding: 3px 11px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid;
+    }
+    .badge-blue  { background: rgba(88,166,255,.1);  color: var(--accent);  border-color: rgba(88,166,255,.3); }
+    .badge-green { background: rgba(63,185,80,.1);   color: var(--green);   border-color: rgba(63,185,80,.3); }
+    .badge-purple{ background: rgba(188,140,255,.1); color: var(--purple);  border-color: rgba(188,140,255,.3); }
+    .badge-orange{ background: rgba(210,153,34,.1);  color: var(--orange);  border-color: rgba(210,153,34,.3); }
+
+    .stat-row {
+      display: flex;
+      gap: 0;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin: 32px 0;
+      overflow: hidden;
+    }
+    .stat {
+      flex: 1;
+      text-align: center;
+      padding: 20px 12px;
+      border-right: 1px solid var(--border);
+    }
+    .stat:last-child { border-right: none; }
+    .stat-num { font-size: 1.8em; font-weight: 800; color: var(--accent); line-height: 1; }
+    .stat-label { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+    .section-title {
+      font-size: 1.1em;
+      font-weight: 700;
+      color: var(--text);
+      margin: 36px 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+      margin-bottom: 40px;
+    }
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      transition: all .15s;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,.2);
+    }
+    .card-num {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .card-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .card-desc { font-size: 12.5px; color: var(--text2); line-height: 1.5; }
+
+    /* Learning path */
+    .path-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 40px; }
+    .path-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .path-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .path-icon { font-size: 20px; }
+    .path-title { font-size: 14px; font-weight: 700; color: var(--text); }
+    .path-sub { font-size: 12px; color: var(--text2); }
+    .path-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 6px 0;
+      font-size: 13px;
+      color: var(--text2);
+      border-top: 1px solid var(--border);
+    }
+    .path-step:first-of-type { border-top: none; }
+    .step-dot {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: rgba(88,166,255,.1);
+      border: 1px solid rgba(88,166,255,.3);
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .path-step a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    .path-step a:hover { text-decoration: underline; }
+
+    /* Note box */
+    .note-box {
+      background: rgba(88,166,255,.06);
+      border: 1px solid rgba(88,166,255,.25);
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-size: 13.5px;
+      color: var(--text2);
+      margin-bottom: 32px;
+      display: flex;
+      gap: 10px;
+    }
+    .note-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+    @media(max-width: 640px) {
+      .stat-row { flex-wrap: wrap; }
+      .stat { min-width: calc(50% - 0px); border-bottom: 1px solid var(--border); }
+      .home-hero h1 { font-size: 1.8em; }
+    }
   </style>
 </head>
 <body>
+
 <div id="progress"></div>
+
 <header>
+  <button class="sidebar-toggle" id="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">☰</button>
   <a class="header-logo" href="#" onclick="loadPage('home');return false;">
     <div class="logo-icon">🔍</div>
-    Learn Claude Code
+    <span>Learn Claude Code</span>
   </a>
   <div class="header-spacer"></div>
-  <a class="header-btn" href="https://github.com/pengr/learn-claude-code" target="_blank" rel="noopener">
+  <a class="header-btn" href="https://github.com/pengr/learn-claude-code" target="_blank" rel="noopener" aria-label="GitHub">
     <svg height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
     GitHub
   </a>
-  <button class="header-btn" id="theme-toggle" onclick="toggleTheme()" title="切换主题">🌙</button>
+  <button class="header-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+  <button class="lang-btn" id="lang-btn" onclick="toggleLang()">EN</button>
 </header>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
 <div class="layout">
   <nav class="sidebar" id="sidebar">
-    <div class="sidebar-label" style="padding-top:8px">导航</div>
-    <a class="sidebar-item" data-page="home" onclick="loadPage('home')">🏠 首页</a>
-    <a class="sidebar-item" data-page="INDEX" onclick="loadPage('INDEX')">📋 文档索引</a>
-    <a class="sidebar-item" data-page="00-overview" onclick="loadPage('00-overview')"><span class="num">00</span> 系统总览</a>
-    <div class="sidebar-label">核心 Agent 机制</div>
+    <div class="sidebar-label" style="padding-top:8px">导航 / Nav</div>
+    <a class="sidebar-item" data-page="home" onclick="loadPage('home')">🏠 <span class="i18n" data-zh="首页" data-en="Home">首页</span></a>
+    <a class="sidebar-item" data-page="INDEX" onclick="loadPage('INDEX')">📋 <span class="i18n" data-zh="文档索引" data-en="Doc Index">文档索引</span></a>
+    <a class="sidebar-item" data-page="00-overview" onclick="loadPage('00-overview')"><span class="num">00</span> <span class="i18n" data-zh="系统总览" data-en="System Overview">系统总览</span></a>
+
+    <div class="sidebar-label"><span class="i18n" data-zh="核心 Agent 机制" data-en="Core Agent Mechanics">核心 Agent 机制</span></div>
     <a class="sidebar-item" data-page="01-agent-loop" onclick="loadPage('01-agent-loop')"><span class="num">01</span> Agent Loop</a>
-    <a class="sidebar-item" data-page="02-tool-system" onclick="loadPage('02-tool-system')"><span class="num">02</span> 工具系统</a>
-    <a class="sidebar-item" data-page="03-permission-system" onclick="loadPage('03-permission-system')"><span class="num">03</span> 权限系统</a>
-    <a class="sidebar-item" data-page="04-compaction" onclick="loadPage('04-compaction')"><span class="num">04</span> 上下文压缩</a>
-    <div class="sidebar-label">基础设施层</div>
-    <a class="sidebar-item" data-page="05-api-layer" onclick="loadPage('05-api-layer')"><span class="num">05</span> API 层</a>
-    <a class="sidebar-item" data-page="06-repl-and-ink" onclick="loadPage('06-repl-and-ink')"><span class="num">06</span> REPL 界面</a>
-    <a class="sidebar-item" data-page="07-commands" onclick="loadPage('07-commands')"><span class="num">07</span> Commands 系统</a>
-    <a class="sidebar-item" data-page="08-memory-system" onclick="loadPage('08-memory-system')"><span class="num">08</span> 内存系统</a>
-    <a class="sidebar-item" data-page="09-mcp" onclick="loadPage('09-mcp')"><span class="num">09</span> MCP 集成</a>
-    <div class="sidebar-label">配置、状态与数据</div>
-    <a class="sidebar-item" data-page="10-state-and-config" onclick="loadPage('10-state-and-config')"><span class="num">10</span> 状态与配置</a>
-    <a class="sidebar-item" data-page="11-cost-and-history" onclick="loadPage('11-cost-and-history')"><span class="num">11</span> Cost &amp; History</a>
-    <div class="sidebar-label">高级特性</div>
-    <a class="sidebar-item" data-page="12-advanced-features" onclick="loadPage('12-advanced-features')"><span class="num">12</span> 高级特性</a>
-    <a class="sidebar-item" data-page="13-security" onclick="loadPage('13-security')"><span class="num">13</span> 安全机制</a>
-    <a class="sidebar-item" data-page="14-misc-features" onclick="loadPage('14-misc-features')"><span class="num">14</span> 杂项特性</a>
-    <div class="sidebar-label">原始文档</div>
-    <a class="sidebar-item" data-page="README" onclick="loadPage('README')">📄 README（原始版）</a>
+    <a class="sidebar-item" data-page="02-tool-system" onclick="loadPage('02-tool-system')"><span class="num">02</span> <span class="i18n" data-zh="工具系统" data-en="Tool System">工具系统</span></a>
+    <a class="sidebar-item" data-page="03-permission-system" onclick="loadPage('03-permission-system')"><span class="num">03</span> <span class="i18n" data-zh="权限系统" data-en="Permission System">权限系统</span></a>
+    <a class="sidebar-item" data-page="04-compaction" onclick="loadPage('04-compaction')"><span class="num">04</span> <span class="i18n" data-zh="上下文压缩" data-en="Context Compaction">上下文压缩</span></a>
+
+    <div class="sidebar-label"><span class="i18n" data-zh="基础设施层" data-en="Infrastructure Layer">基础设施层</span></div>
+    <a class="sidebar-item" data-page="05-api-layer" onclick="loadPage('05-api-layer')"><span class="num">05</span> <span class="i18n" data-zh="API 层" data-en="API Layer">API 层</span></a>
+    <a class="sidebar-item" data-page="06-repl-and-ink" onclick="loadPage('06-repl-and-ink')"><span class="num">06</span> <span class="i18n" data-zh="REPL 界面" data-en="REPL &amp; Ink UI">REPL 界面</span></a>
+    <a class="sidebar-item" data-page="07-commands" onclick="loadPage('07-commands')"><span class="num">07</span> <span class="i18n" data-zh="Commands 系统" data-en="Commands System">Commands 系统</span></a>
+    <a class="sidebar-item" data-page="08-memory-system" onclick="loadPage('08-memory-system')"><span class="num">08</span> <span class="i18n" data-zh="内存系统" data-en="Memory System">内存系统</span></a>
+    <a class="sidebar-item" data-page="09-mcp" onclick="loadPage('09-mcp')"><span class="num">09</span> <span class="i18n" data-zh="MCP 集成" data-en="MCP Integration">MCP 集成</span></a>
+
+    <div class="sidebar-label"><span class="i18n" data-zh="配置、状态与数据" data-en="Config, State &amp; Data">配置、状态与数据</span></div>
+    <a class="sidebar-item" data-page="10-state-and-config" onclick="loadPage('10-state-and-config')"><span class="num">10</span> <span class="i18n" data-zh="状态与配置" data-en="State &amp; Config">状态与配置</span></a>
+    <a class="sidebar-item" data-page="11-cost-and-history" onclick="loadPage('11-cost-and-history')"><span class="num">11</span> <span class="i18n" data-zh="成本与历史" data-en="Cost &amp; History">成本与历史</span></a>
+
+    <div class="sidebar-label"><span class="i18n" data-zh="高级特性" data-en="Advanced Features">高级特性</span></div>
+    <a class="sidebar-item" data-page="12-advanced-features" onclick="loadPage('12-advanced-features')"><span class="num">12</span> <span class="i18n" data-zh="高级特性" data-en="Advanced Features">高级特性</span></a>
+    <a class="sidebar-item" data-page="13-security" onclick="loadPage('13-security')"><span class="num">13</span> <span class="i18n" data-zh="安全机制" data-en="Security">安全机制</span></a>
+    <a class="sidebar-item" data-page="14-misc-features" onclick="loadPage('14-misc-features')"><span class="num">14</span> <span class="i18n" data-zh="杂项特性" data-en="Misc Features">杂项特性</span></a>
+
+    <div class="sidebar-label"><span class="i18n" data-zh="原始文档" data-en="Original Docs">原始文档</span></div>
+    <a class="sidebar-item" data-page="README" onclick="loadPage('README')">📄 README</a>
   </nav>
+
   <main class="main" id="main-content">
-    <div class="loading"><div class="spinner"></div>加载中...</div>
+    <div class="loading"><div class="spinner"></div><span class="i18n" data-zh="加载中..." data-en="Loading...">加载中...</span></div>
   </main>
 </div>
-<button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到顶部">↑</button>
+
+<button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">↑</button>
+
 <script>
-marked.setOptions({breaks:true,gfm:true});
-const renderer=new marked.Renderer();
-renderer.code=function(code,lang){
-  let hl=code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  if(lang&&hljs.getLanguage(lang)){try{hl=hljs.highlight(code,{language:lang}).value;}catch(e){}}
-  else{try{hl=hljs.highlightAuto(code).value;}catch(e){}}
-  return `<div class="code-wrapper"><pre><code class="hljs">${hl}</code></pre><button class="copy-btn" onclick="copyCode(this)">复制</button></div>`;
+/* ── i18n data ── */
+const I18N = {
+  zh: {
+    copy: '复制', copied: '已复制!',
+    loadFail: '加载失败',
+    loading: '加载中...',
+    heroTitle: 'Learn Claude Code',
+    heroSubtitle: '基于 Claude Code 源码（~1332 个 TypeScript 文件）的完整技术分析文档集。深入理解这款 AI Coding Agent 的每一个核心系统。',
+    statsLabels: ['TypeScript 文件', '工具数量', '斜杠命令', 'AppState 字段', 'query.ts 行数', '文档章节'],
+    docNoteLabel: '📘 文档语言说明',
+    docNote: '所有技术文档（docs/）均为中文撰写，完整分析了 Claude Code 的英文源码。导航界面支持中英双语切换。',
+    allChapters: '全部章节',
+    learningPaths: '学习路径',
+    pathA: { title: '快速了解', sub: '约 30 分钟', steps: ['系统总览 — 建立整体概念','README — 核心数据流'] },
+    pathB: { title: '技术深度', sub: '2–3 小时', steps: ['系统总览','Agent Loop — 理解核心循环','工具系统 — 理解工具机制','上下文压缩 — 最复杂的优化','API 层 — Prompt Cache'] },
+    pathC: { title: '构建类似系统', sub: '全部文档', steps: ['按顺序阅读全部 15 份文档','每份约 20–40 分钟','涵盖约 95% 核心系统'] },
+    cards: [
+      { num:'00', title:'系统总览', desc:'架构图、15个核心系统速查、关键数字与技术决策解析' },
+      { num:'01', title:'Agent Loop', desc:'query.ts 1729行深度解析：8个阶段、State状态机、终止条件' },
+      { num:'02', title:'工具系统', desc:'44个工具完整清单、buildTool()工厂、ToolUseContext字段' },
+      { num:'03', title:'权限系统', desc:'7层权限流水线、6种模式、Glob匹配、危险命令检测' },
+      { num:'04', title:'上下文压缩', desc:'4层递进式压缩：Snip → Microcompact → Collapse → Autocompact' },
+      { num:'05', title:'API 层', desc:'4种后端、OAuth PKCE 7步流程、Prompt Cache插入规则、withRetry' },
+      { num:'06', title:'REPL 界面', desc:'自定义Ink Fork、双缓冲渲染、REPL状态机、setToolJSX注入' },
+      { num:'07', title:'Commands 系统', desc:'88+ 斜杠命令、3种类型、调度流程、Skill格式' },
+      { num:'08', title:'内存系统', desc:'CLAUDE.md 7层优先级、@import语法、memdir、Session Memory阈值' },
+      { num:'09', title:'MCP 集成', desc:'6种传输协议、MCPServerConnection状态机、工具注册、配置格式' },
+      { num:'10', title:'状态与配置', desc:'AppState 450+字段、不可变更新、5层配置优先级、11次数据库迁移' },
+      { num:'11', title:'成本与历史', desc:'模型定价表、成本公式、history.jsonl、paste-cache、Esc撤销机制' },
+      { num:'12', title:'高级特性', desc:'多Agent Fork优化、Bridge远程控制、LSP集成、插件系统' },
+      { num:'13', title:'安全机制', desc:'7层权限流水线、Windows绕过防御、Auto模式ML分类器、DenialTracking' },
+      { num:'14', title:'杂项特性', desc:'Vim 11状态机、Keybindings 19上下文、Voice 3层门控、Teleport、VCR' },
+    ],
+  },
+  en: {
+    copy: 'Copy', copied: 'Copied!',
+    loadFail: 'Load failed',
+    loading: 'Loading...',
+    heroTitle: 'Learn Claude Code',
+    heroSubtitle: 'Complete technical analysis of Claude Code internals (~1332 TypeScript files). Understand every core system of this AI Coding Agent in depth.',
+    statsLabels: ['TypeScript Files', 'Tools', 'Slash Commands', 'AppState Fields', 'query.ts Lines', 'Doc Chapters'],
+    docNoteLabel: '📘 Note on Document Language',
+    docNote: 'All technical documents (docs/) are written in Chinese, with complete analysis of the English Claude Code source code. The navigation UI supports both Chinese and English.',
+    allChapters: 'All Chapters',
+    learningPaths: 'Learning Paths',
+    pathA: { title: 'Quick Overview', sub: '~30 minutes', steps: ['System Overview — Build a mental model','README — Core data flow'] },
+    pathB: { title: 'Technical Deep Dive', sub: '2–3 hours', steps: ['System Overview','Agent Loop — Core loop mechanics','Tool System — How tools work','Context Compaction — Most complex optimization','API Layer — Prompt Cache'] },
+    pathC: { title: 'Build a Similar System', sub: 'All docs', steps: ['Read all 15 documents in order','~20–40 min each','Covers ~95% of core systems'] },
+    cards: [
+      { num:'00', title:'System Overview', desc:'Architecture diagram, 15 core systems quick-ref, key numbers & design decisions' },
+      { num:'01', title:'Agent Loop', desc:'Deep dive into query.ts (1729 lines): 8 phases, State machine, termination conditions' },
+      { num:'02', title:'Tool System', desc:'Complete list of 44 tools, buildTool() factory, ToolUseContext fields & lifecycle' },
+      { num:'03', title:'Permission System', desc:'7-stage pipeline, 6 permission modes, Glob matching, dangerous command detection' },
+      { num:'04', title:'Context Compaction', desc:'4-layer compaction: Snip → Microcompact → Collapse → Autocompact with thresholds' },
+      { num:'05', title:'API Layer', desc:'4 backends, OAuth PKCE 7-step flow, Prompt Cache insertion rules, withRetry algorithm' },
+      { num:'06', title:'REPL & Ink UI', desc:'Custom Ink fork, double-buffered rendering, REPL state machine, setToolJSX injection' },
+      { num:'07', title:'Commands System', desc:'88+ slash commands, 3 types, dispatch flow, Skill format specification' },
+      { num:'08', title:'Memory System', desc:'CLAUDE.md 7-tier priority, @import syntax, memdir, Session Memory thresholds' },
+      { num:'09', title:'MCP Integration', desc:'6 transport protocols, MCPServerConnection state machine, tool registration' },
+      { num:'10', title:'State & Config', desc:'AppState 450+ fields, immutable updates, 5-level config priority, 11 DB migrations' },
+      { num:'11', title:'Cost & History', desc:'Model pricing table, cost formula, history.jsonl, paste-cache, Esc undo mechanism' },
+      { num:'12', title:'Advanced Features', desc:'Multi-Agent Fork Cache optimization, Bridge remote control, LSP integration, plugins' },
+      { num:'13', title:'Security', desc:'7-layer pipeline, Windows bypass defense, Auto-mode ML classifier, DenialTracking' },
+      { num:'14', title:'Misc Features', desc:'Vim 11-state machine, Keybindings 19 contexts, Voice 3-gate, Teleport, VCR fixtures' },
+    ],
+  },
 };
-renderer.link=function(href,title,text){
-  if(href&&href.endsWith('.md')){const p=href.replace(/^\.\//,'').replace(/\.md$/,'');return `<a href="#" onclick="loadPage('${p}');return false;">${text}</a>`;}
-  const ext=href&&(href.startsWith('http')||href.startsWith('//'));
-  return `<a href="${href}" ${ext?'target="_blank" rel="noopener"':''} >${text}</a>`;
-};
-marked.use({renderer});
 
-function copyCode(btn){
-  navigator.clipboard.writeText(btn.previousElementSibling.querySelector('code').innerText).then(()=>{
-    btn.textContent='已复制!';btn.classList.add('copied');
-    setTimeout(()=>{btn.textContent='复制';btn.classList.remove('copied');},1500);
-  });
-}
-function toggleTheme(){
-  const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';
-  h.setAttribute('data-theme',d?'light':'dark');
-  document.getElementById('theme-toggle').textContent=d?'☀️':'🌙';
-  document.getElementById('hljs-theme').href=d
-    ?'https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css'
-    :'https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css';
-  localStorage.setItem('theme',d?'light':'dark');
-}
-function setActive(p){document.querySelectorAll('.sidebar-item').forEach(e=>e.classList.toggle('active',e.dataset.page===p));}
-window.addEventListener('scroll',()=>{
-  const s=window.scrollY,d=document.body.scrollHeight-window.innerHeight;
-  document.getElementById('progress').style.width=d>0?(s/d*100)+'%':'0%';
-  document.getElementById('back-top').classList.toggle('show',s>400);
-},{passive:true});
-
-const CARDS=[
-  {num:'00',page:'00-overview',title:'系统总览',desc:'架构图、15个核心系统速查、关键数字与技术决策'},
-  {num:'01',page:'01-agent-loop',title:'Agent Loop',desc:'query.ts 1729行深度解析：8个阶段、State状态机、终止条件'},
-  {num:'02',page:'02-tool-system',title:'工具系统',desc:'44个工具完整清单、buildTool()工厂、ToolUseContext字段'},
-  {num:'03',page:'03-permission-system',title:'权限系统',desc:'7层权限流水线、6种模式、Glob匹配、危险命令检测'},
-  {num:'04',page:'04-compaction',title:'上下文压缩',desc:'4层递进式压缩：Snip→Microcompact→Collapse→Autocompact'},
-  {num:'05',page:'05-api-layer',title:'API 层',desc:'4种后端、OAuth PKCE 7步流程、Prompt Cache、withRetry'},
-  {num:'06',page:'06-repl-and-ink',title:'REPL 界面',desc:'自定义Ink Fork、双缓冲渲染、setToolJSX注入机制'},
-  {num:'07',page:'07-commands',title:'Commands 系统',desc:'88+ 斜杠命令、3种类型、调度流程、Skill格式'},
-  {num:'08',page:'08-memory-system',title:'内存系统',desc:'CLAUDE.md 7层优先级、@import语法、Session Memory'},
-  {num:'09',page:'09-mcp',title:'MCP 集成',desc:'6种传输协议、MCPServerConnection状态机、工具注册'},
-  {num:'10',page:'10-state-and-config',title:'状态与配置',desc:'AppState 450+字段、不可变更新、5层配置优先级、11次迁移'},
-  {num:'11',page:'11-cost-and-history',title:'Cost & History',desc:'模型定价表、成本公式、history.jsonl、Esc撤销机制'},
-  {num:'12',page:'12-advanced-features',title:'高级特性',desc:'多Agent Fork优化、Bridge远程控制、LSP集成、插件系统'},
-  {num:'13',page:'13-security',title:'安全机制',desc:'7层权限流水线、Windows绕过防御、ML分类器、DenialTracking'},
-  {num:'14',page:'14-misc-features',title:'杂项特性',desc:'Vim 11状态机、Keybindings 19上下文、Voice、Teleport、VCR'},
+const PAGE_KEYS = [
+  '00-overview','01-agent-loop','02-tool-system','03-permission-system','04-compaction',
+  '05-api-layer','06-repl-and-ink','07-commands','08-memory-system','09-mcp',
+  '10-state-and-config','11-cost-and-history','12-advanced-features','13-security','14-misc-features',
 ];
 
-function renderHome(){
-  const m=document.getElementById('main-content');
-  m.innerHTML=`
+/* ── State ── */
+let currentLang = localStorage.getItem('lang') || 'zh';
+let currentTheme = localStorage.getItem('theme') || 'dark';
+
+/* ── Marked setup ── */
+marked.setOptions({ breaks: true, gfm: true });
+const renderer = new marked.Renderer();
+renderer.code = function(code, lang) {
+  let hl = code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  if (lang && hljs.getLanguage(lang)) {
+    try { hl = hljs.highlight(code, { language: lang }).value; } catch(e) {}
+  } else {
+    try { hl = hljs.highlightAuto(code).value; } catch(e) {}
+  }
+  const lbl = currentLang === 'zh' ? '复制' : 'Copy';
+  return `<div class="code-wrapper"><pre><code class="hljs">${hl}</code></pre><button class="copy-btn" onclick="copyCode(this)">${lbl}</button></div>`;
+};
+renderer.link = function(href, title, text) {
+  if (href && href.match(/^\.?\/?[\w-]+\.md$/)) {
+    const p = href.replace(/^\.\//,'').replace(/\.md$/, '');
+    return `<a href="#" onclick="loadPage('${p}');return false;">${text}</a>`;
+  }
+  const ext = href && (href.startsWith('http') || href.startsWith('//'));
+  return `<a href="${href}" ${ext ? 'target="_blank" rel="noopener"' : ''}>${text}</a>`;
+};
+marked.use({ renderer });
+
+/* ── Utilities ── */
+function t(key) { return I18N[currentLang][key]; }
+
+function copyCode(btn) {
+  const code = btn.previousElementSibling.querySelector('code').innerText;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = t('copied');
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = t('copy'); btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+function applyLang() {
+  document.documentElement.setAttribute('data-lang', currentLang);
+  document.getElementById('lang-btn').textContent = currentLang === 'zh' ? 'EN' : '中文';
+  document.querySelectorAll('.i18n').forEach(el => {
+    el.textContent = el.dataset[currentLang] || el.textContent;
+  });
+  localStorage.setItem('lang', currentLang);
+}
+
+function toggleLang() {
+  currentLang = currentLang === 'zh' ? 'en' : 'zh';
+  applyLang();
+  const h = location.hash.slice(1) || 'home';
+  if (h === 'home') renderHome();
+}
+
+function toggleTheme() {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  document.getElementById('theme-toggle').textContent = currentTheme === 'dark' ? '🌙' : '☀️';
+  document.getElementById('hljs-theme').href = currentTheme === 'dark'
+    ? 'https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css'
+    : 'https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css';
+  localStorage.setItem('theme', currentTheme);
+}
+
+function setActive(page) {
+  document.querySelectorAll('.sidebar-item').forEach(e => {
+    e.classList.toggle('active', e.dataset.page === page);
+  });
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+
+/* ── Scroll / progress ── */
+window.addEventListener('scroll', () => {
+  const scrolled = window.scrollY;
+  const total = document.body.scrollHeight - window.innerHeight;
+  document.getElementById('progress').style.width = total > 0 ? (scrolled / total * 100) + '%' : '0%';
+  document.getElementById('back-top').classList.toggle('show', scrolled > 400);
+}, { passive: true });
+
+/* ── Home page ── */
+function renderHome() {
+  const d = I18N[currentLang];
+  const m = document.getElementById('main-content');
+
+  const statsNums  = ['1,332', '44', '88+', '450+', '1,729', '15'];
+  const statsRow = statsNums.map((n, i) =>
+    `<div class="stat"><div class="stat-num">${n}</div><div class="stat-label">${d.statsLabels[i]}</div></div>`
+  ).join('');
+
+  const badges = currentLang === 'zh'
+    ? `<span class="badge badge-blue">TypeScript + React/Ink</span>
+       <span class="badge badge-green">44 个工具</span>
+       <span class="badge badge-purple">15 篇深度文档</span>
+       <span class="badge badge-orange">1729 行 Agent Loop</span>
+       <span class="badge badge-blue">4 层上下文压缩</span>`
+    : `<span class="badge badge-blue">TypeScript + React/Ink</span>
+       <span class="badge badge-green">44 Tools</span>
+       <span class="badge badge-purple">15 Deep-dive Docs</span>
+       <span class="badge badge-orange">1729-line Agent Loop</span>
+       <span class="badge badge-blue">4-layer Compaction</span>`;
+
+  const cards = d.cards.map((c, i) =>
+    `<a class="card" href="#" onclick="loadPage('${PAGE_KEYS[i]}');return false;">
+      <div class="card-num">Chapter ${c.num}</div>
+      <div class="card-title">${c.title}</div>
+      <div class="card-desc">${c.desc}</div>
+    </a>`
+  ).join('');
+
+  const pa = d.pathA, pb = d.pathB, pc = d.pathC;
+  const pathASteps = [
+    { page:'00-overview', label: pa.steps[0] },
+    { page:'README',      label: pa.steps[1] },
+  ];
+  const pathBSteps = [
+    { page:'00-overview',   label: pb.steps[0] },
+    { page:'01-agent-loop', label: pb.steps[1] },
+    { page:'02-tool-system',label: pb.steps[2] },
+    { page:'04-compaction', label: pb.steps[3] },
+    { page:'05-api-layer',  label: pb.steps[4] },
+  ];
+  const makeSteps = (steps) => steps.map((s, i) =>
+    `<div class="path-step"><div class="step-dot">${i+1}</div><div><a href="#" onclick="loadPage('${s.page}');return false;">${s.label}</a></div></div>`
+  ).join('');
+  const makeTextSteps = (steps) => steps.map((s, i) =>
+    `<div class="path-step"><div class="step-dot">${i+1}</div><div>${s}</div></div>`
+  ).join('');
+
+  m.innerHTML = `
 <div class="home-hero">
-  <h1>Learn Claude Code</h1>
-  <p>基于 Claude Code 源码（~1332 个 TypeScript 文件）的完整技术分析文档集。深入理解这款 AI Coding Agent 的每一个系统。</p>
-  <div class="home-badges">
-    <span class="badge badge-blue">TypeScript + React/Ink</span>
-    <span class="badge badge-green">44 个工具</span>
-    <span class="badge badge-purple">15 篇深度文档</span>
-    <span class="badge badge-blue">1729 行 Agent Loop</span>
-    <span class="badge badge-green">4 层上下文压缩</span>
+  <h1>${d.heroTitle}</h1>
+  <p>${d.heroSubtitle}</p>
+  <div class="home-badges">${badges}</div>
+</div>
+
+<div class="stat-row">${statsRow}</div>
+
+<div class="note-box">
+  <div class="note-icon">ℹ️</div>
+  <div><strong>${d.docNoteLabel}：</strong>${d.docNote}</div>
+</div>
+
+<div class="section-title">${d.learningPaths}</div>
+<div class="path-grid">
+  <div class="path-card">
+    <div class="path-header"><div class="path-icon">⚡</div><div><div class="path-title">${pa.title}</div><div class="path-sub">${pa.sub}</div></div></div>
+    ${makeSteps(pathASteps)}
+  </div>
+  <div class="path-card">
+    <div class="path-header"><div class="path-icon">🔬</div><div><div class="path-title">${pb.title}</div><div class="path-sub">${pb.sub}</div></div></div>
+    ${makeSteps(pathBSteps)}
+  </div>
+  <div class="path-card">
+    <div class="path-header"><div class="path-icon">🏗️</div><div><div class="path-title">${pc.title}</div><div class="path-sub">${pc.sub}</div></div></div>
+    ${makeTextSteps(pc.steps)}
   </div>
 </div>
-<div class="stat-row">
-  <div class="stat"><div class="stat-num">1332</div><div class="stat-label">TypeScript 文件</div></div>
-  <div class="stat"><div class="stat-num">44</div><div class="stat-label">工具数量</div></div>
-  <div class="stat"><div class="stat-num">88+</div><div class="stat-label">斜杠命令</div></div>
-  <div class="stat"><div class="stat-num">450+</div><div class="stat-label">AppState 字段</div></div>
-  <div class="stat"><div class="stat-num">1729</div><div class="stat-label">query.ts 行数</div></div>
-  <div class="stat"><div class="stat-num">15</div><div class="stat-label">文档章节</div></div>
-</div>
-<div class="card-grid">${CARDS.map(c=>`<a class="card" onclick="loadPage('${c.page}');return false;" href="#"><div class="card-num">Chapter ${c.num}</div><div class="card-title">${c.title}</div><div class="card-desc">${c.desc}</div></a>`).join('')}</div>`;
+
+<div class="section-title">${d.allChapters}</div>
+<div class="card-grid">${cards}</div>`;
 }
 
-async function loadPage(page){
-  const m=document.getElementById('main-content');
+/* ── Page loader ── */
+async function loadPage(page) {
+  const m = document.getElementById('main-content');
   setActive(page);
-  window.history.pushState({page},'','#'+page);
-  if(page==='home'){renderHome();window.scrollTo(0,0);return;}
-  m.innerHTML='<div class="loading"><div class="spinner"></div>加载中...</div>';
-  try{
-    const r=await fetch('docs/'+page+'.md');
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    const md=await r.text();
-    m.innerHTML='<div class="md-body">'+marked.parse(md)+'</div>';
-    m.querySelectorAll('pre code:not(.hljs)').forEach(e=>hljs.highlightElement(e));
-    window.scrollTo(0,0);
-  }catch(e){m.innerHTML=`<div class="loading" style="color:var(--red)">❌ 加载失败：${e.message}</div>`;}
+  window.history.pushState({ page }, '', '#' + page);
+
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+
+  if (page === 'home') {
+    renderHome();
+    window.scrollTo(0, 0);
+    return;
+  }
+
+  m.innerHTML = `<div class="loading"><div class="spinner"></div>${t('loading')}</div>`;
+
+  try {
+    const r = await fetch('docs/' + page + '.md');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const md = await r.text();
+    m.innerHTML = '<div class="md-body">' + marked.parse(md) + '</div>';
+    m.querySelectorAll('pre code:not(.hljs)').forEach(e => hljs.highlightElement(e));
+    window.scrollTo(0, 0);
+  } catch(e) {
+    m.innerHTML = `<div class="loading" style="color:var(--red)">❌ ${t('loadFail')}: ${e.message}</div>`;
+  }
 }
 
-(function(){
-  const s=localStorage.getItem('theme');
-  if(s){document.documentElement.setAttribute('data-theme',s);document.getElementById('theme-toggle').textContent=s==='dark'?'🌙':'☀️';}
-  const h=location.hash.slice(1)||'home';
-  loadPage(h);
-  window.addEventListener('popstate',e=>{if(e.state&&e.state.page)loadPage(e.state.page);});
+/* ── Init ── */
+(function init() {
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  document.getElementById('theme-toggle').textContent = currentTheme === 'dark' ? '🌙' : '☀️';
+  if (currentTheme === 'light') {
+    document.getElementById('hljs-theme').href =
+      'https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css';
+  }
+  applyLang();
+  const hash = location.hash.slice(1) || 'home';
+  loadPage(hash);
+  window.addEventListener('popstate', e => {
+    if (e.state && e.state.page) loadPage(e.state.page);
+  });
 })();
 </script>
 </body>
