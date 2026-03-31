@@ -549,8 +549,6 @@
     <a class="sidebar-item" data-page="13-security" onclick="loadPage('13-security')"><span class="num">13</span> <span class="i18n" data-zh="安全机制" data-en="Security">安全机制</span></a>
     <a class="sidebar-item" data-page="14-misc-features" onclick="loadPage('14-misc-features')"><span class="num">14</span> <span class="i18n" data-zh="杂项特性" data-en="Misc Features">杂项特性</span></a>
 
-    <div class="sidebar-label"><span class="i18n" data-zh="文档索引" data-en="Doc Index">文档索引</span></div>
-    <a class="sidebar-item" data-page="INDEX" onclick="loadPage('INDEX')">📋 <span class="i18n" data-zh="完整索引" data-en="Full Index">完整索引</span></a>
   </nav>
 
   <main class="main" id="main-content">
@@ -558,7 +556,30 @@
   </main>
 </div>
 
+<footer style="
+  text-align:center;
+  padding:28px 20px;
+  font-size:13px;
+  color:var(--text2);
+  border-top:1px solid var(--border);
+  background:var(--bg2);
+">
+  <span>Made with ❤️ by <strong style="color:var(--text)">Ru Peng (a.k.a Perry)</strong></span>
+  &nbsp;·&nbsp;
+  <span class="i18n" data-zh="最后更新" data-en="Last updated">最后更新</span>
+  <span id="footer-date"></span>
+  &nbsp;·&nbsp;
+  <a href="https://github.com/pengr/learn-claude-code" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none;">GitHub</a>
+</footer>
+
 <button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">↑</button>
+
+<script>
+  document.getElementById('footer-date').textContent = new Date('2026-03-31').toLocaleDateString(
+    document.documentElement.getAttribute('data-lang') === 'en' ? 'en-US' : 'zh-CN',
+    { year:'numeric', month:'long', day:'numeric' }
+  );
+</script>
 
 <script>
 /* ── i18n data ── */
@@ -682,6 +703,11 @@ function applyLang() {
   document.querySelectorAll('.i18n').forEach(el => {
     el.textContent = el.dataset[currentLang] || el.textContent;
   });
+  const dateEl = document.getElementById('footer-date');
+  if (dateEl) dateEl.textContent = new Date('2026-03-31').toLocaleDateString(
+    currentLang === 'en' ? 'en-US' : 'zh-CN',
+    { year:'numeric', month:'long', day:'numeric' }
+  );
   localStorage.setItem('lang', currentLang);
 }
 
